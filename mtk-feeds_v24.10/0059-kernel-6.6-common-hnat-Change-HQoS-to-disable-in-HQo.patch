@@ -1,0 +1,106 @@
+From 491d95de88c698d1dc0be963ba285cc7be42f65f Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Fri, 28 Nov 2025 21:17:35 +0800
+Subject: [PATCH 59/64] [][kernel-6.6][common][hnat][Change HQoS to disable in
+ HQoS mode(qos_toggle=1) when skb is unmarked]
+
+[Description]
+Change HQoS to disable in HQoS mode(qos_toggle=1) when skb is unmarked.
+
+Without this patch, all HNAT BIND packet(included unmarked packet)
+would enter QDMA when qos_toggle=1.
+
+[Release-log]
+N/A
+
+Change-Id: Ifedad27f25b42aad02892084de2392f986090ffe
+Reviewed-on: https://gerrit.mediatek.inc/c/openwrt/feeds/mtk_openwrt_feeds/+/11363405
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../net/ethernet/mediatek/mtk_hnat/hnat.h     |  4 ++--
+ .../ethernet/mediatek/mtk_hnat/hnat_nf_hook.c | 19 ++++++++++---------
+ 2 files changed, 12 insertions(+), 11 deletions(-)
+
+diff --git a/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat.h b/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat.h
+index cd3cf8e275..589b7f4cf5 100644
+--- a/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat.h
++++ b/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat.h
+@@ -1313,8 +1313,8 @@ enum FoeIpAct {
+ #define UDF_PINGPONG_IFIDX GENMASK(6, 0)
+ 
+ #define HQOS_FLAG(dev, skb, qid)				\
+-	((IS_HQOS_UL_MODE && IS_WAN(dev)) ||			\
+-	 (IS_HQOS_DL_MODE && IS_LAN_GRP(dev)) ||		\
++	((IS_HQOS_UL_MODE && skb->mark && IS_WAN(dev)) ||			\
++	 (IS_HQOS_DL_MODE && skb->mark && IS_LAN_GRP(dev)) ||		\
+ 	 (IS_PPPQ_MODE && (IS_PPPQ_PATH(dev, skb) ||		\
+ 			   qid >= MAX_PPPQ_QUEUE_NUM)))
+ 
+diff --git a/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c b/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c
+index bef401b360..d7a1038a82 100644
+--- a/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c
++++ b/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c
+@@ -2699,6 +2699,7 @@ int mtk_sw_nat_hook_tx(struct sk_buff *skb, int gmac_no)
+ 	struct hnat_flow_entry *flow_entry;
+ 	struct ethhdr *eth;
+ 	struct nf_conn *ct;
++	u32 fqos = (IS_HQOS_DL_MODE && skb->mark);
+ 	enum ip_conntrack_info ctinfo;
+ 
+ 	if (!skb_hnat_is_hashed(skb) || skb_hnat_ppe(skb) >= CFG_PPE_NUM)
+@@ -2817,8 +2818,8 @@ int mtk_sw_nat_hook_tx(struct sk_buff *skb, int gmac_no)
+ 			entry.ipv4_hnapt.winfo.bssid = skb_hnat_bss_id(skb);
+ 			entry.ipv4_hnapt.winfo.wcid = skb_hnat_wc_id(skb);
+ #if defined(CONFIG_MEDIATEK_NETSYS_V3)
+-			entry.ipv4_hnapt.tport_id = IS_HQOS_DL_MODE ? NR_QDMA_TPORT : 0;
+-			entry.ipv4_hnapt.iblk2.fqos = IS_HQOS_DL_MODE ? 1 : 0;
++			entry.ipv4_hnapt.tport_id = fqos ? NR_QDMA_TPORT : 0;
++			entry.ipv4_hnapt.iblk2.fqos = fqos;
+ 			entry.ipv4_hnapt.iblk2.rxid = skb_hnat_rx_id(skb);
+ 			entry.ipv4_hnapt.iblk2.winfoi = 1;
+ 			entry.ipv4_hnapt.winfo_pao.usr_info =
+@@ -2876,8 +2877,8 @@ int mtk_sw_nat_hook_tx(struct sk_buff *skb, int gmac_no)
+ 		entry.ipv6_hnapt.winfo_pao.is_sp = skb_hnat_is_sp(skb);
+ 		entry.ipv6_hnapt.winfo_pao.hf = skb_hnat_hf(skb);
+ 		entry.ipv6_hnapt.winfo_pao.amsdu = skb_hnat_amsdu(skb);
+-		entry.ipv6_hnapt.tport_id = IS_HQOS_DL_MODE ? NR_QDMA_TPORT : 0;
+-		entry.ipv6_hnapt.iblk2.fqos = IS_HQOS_DL_MODE ? 1 : 0;
++		entry.ipv6_hnapt.tport_id = fqos ? NR_QDMA_TPORT : 0;
++		entry.ipv6_hnapt.iblk2.fqos = fqos;
+ 	} else if (IS_L2_BRIDGE(&entry)) {
+ 		entry.l2_bridge.iblk2.dp = gmac_no & 0xf;
+ 		entry.l2_bridge.iblk2.rxid = skb_hnat_rx_id(skb);
+@@ -2894,7 +2895,7 @@ int mtk_sw_nat_hook_tx(struct sk_buff *skb, int gmac_no)
+ 		entry.l2_bridge.winfo_pao.is_sp = skb_hnat_is_sp(skb);
+ 		entry.l2_bridge.winfo_pao.hf = skb_hnat_hf(skb);
+ 		entry.l2_bridge.winfo_pao.amsdu = skb_hnat_amsdu(skb);
+-		entry.l2_bridge.iblk2.fqos = IS_HQOS_DL_MODE ? 1 : 0;
++		entry.l2_bridge.iblk2.fqos = fqos;
+ #endif
+ 	} else {
+ 		entry.ipv6_5t_route.iblk2.fqos = 0;
+@@ -2910,8 +2911,8 @@ int mtk_sw_nat_hook_tx(struct sk_buff *skb, int gmac_no)
+ 			case IPV4_MAP_T:
+ 				entry.ipv4_mape.winfo.bssid = skb_hnat_bss_id(skb);
+ 				entry.ipv4_mape.winfo.wcid = skb_hnat_wc_id(skb);
+-				entry.ipv4_mape.tport_id = IS_HQOS_DL_MODE ? NR_QDMA_TPORT : 0;
+-				entry.ipv4_mape.iblk2.fqos = IS_HQOS_DL_MODE ? 1 : 0;
++				entry.ipv4_mape.tport_id = fqos ? NR_QDMA_TPORT : 0;
++				entry.ipv4_mape.iblk2.fqos = fqos;
+ 				entry.ipv4_mape.iblk2.rxid = skb_hnat_rx_id(skb);
+ 				entry.ipv4_mape.iblk2.winfoi = 1;
+ 				entry.ipv4_mape.winfo_pao.usr_info =
+@@ -2932,8 +2933,8 @@ int mtk_sw_nat_hook_tx(struct sk_buff *skb, int gmac_no)
+ 			default:
+ 				entry.ipv6_5t_route.winfo.bssid = skb_hnat_bss_id(skb);
+ 				entry.ipv6_5t_route.winfo.wcid = skb_hnat_wc_id(skb);
+-				entry.ipv6_5t_route.tport_id = IS_HQOS_DL_MODE ? NR_QDMA_TPORT : 0;
+-				entry.ipv6_5t_route.iblk2.fqos = IS_HQOS_DL_MODE ? 1 : 0;
++				entry.ipv6_5t_route.tport_id = fqos ? NR_QDMA_TPORT : 0;
++				entry.ipv6_5t_route.iblk2.fqos = fqos;
+ 				entry.ipv6_5t_route.iblk2.rxid = skb_hnat_rx_id(skb);
+ 				entry.ipv6_5t_route.iblk2.winfoi = 1;
+ 				entry.ipv6_5t_route.winfo_pao.usr_info =
+-- 
+2.50.1 (Apple Git-155)
+

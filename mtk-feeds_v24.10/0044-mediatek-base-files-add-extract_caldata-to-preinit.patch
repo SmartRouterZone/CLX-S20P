@@ -1,0 +1,58 @@
+From 4ac1c274bbeec5701f9fb7392f35bc2b107fd353 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Wed, 26 Nov 2025 21:30:29 +0800
+Subject: [PATCH 44/64] mediatek: base-files: add extract_caldata to preinit -
+ since we have no device to test, we add this as a workaround fix for these
+ devices
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../base-files/lib/preinit/90_extract_caldata | 36 +++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+ create mode 100644 target/linux/mediatek/filogic/base-files/lib/preinit/90_extract_caldata
+
+diff --git a/target/linux/mediatek/filogic/base-files/lib/preinit/90_extract_caldata b/target/linux/mediatek/filogic/base-files/lib/preinit/90_extract_caldata
+new file mode 100644
+index 0000000000..62df2c6ba0
+--- /dev/null
++++ b/target/linux/mediatek/filogic/base-files/lib/preinit/90_extract_caldata
+@@ -0,0 +1,36 @@
++. /lib/functions/caldata.sh
++. /lib/functions/system.sh
++
++caldata_validate() {
++	local macprefix
++
++	[ -e "/lib/firmware/$FIRMWARE" ] || return 1
++
++	macprefix=$(hexdump -v -n 2 -s 4 -e '1/1 "%02x:" "%02x"' "/lib/firmware/$FIRMWARE" 2>"/dev/null")
++	if [ "$macprefix" = "00:0c" ] || [ -z "$macprefix" ]; then
++		return 1
++	else
++		return 0
++	fi
++}
++
++do_extract_caldata() {
++	case $(board_name) in
++	# mt7981
++	cmcc,xr30-emmc |\
++	cmcc,rax3000m-emmc)
++		FIRMWARE=MT7981_iPAiLNA_EEPROM.bin
++		caldata_validate && exit 0
++		caldata_extract_mmc "factory" 0x0 0x1000
++		;;
++	# mt7986
++	glinet,gl-mt6000 |\
++	jdcloud,re-cp-03)
++		FIRMWARE=MT7986_ePAeLNA_EEPROM_AX6000.bin
++		caldata_validate && exit 0
++		caldata_extract_mmc "factory" 0x0 0x1000
++		;;
++	esac
++}
++
++boot_hook_add preinit_main do_extract_caldata
+-- 
+2.50.1 (Apple Git-155)
+

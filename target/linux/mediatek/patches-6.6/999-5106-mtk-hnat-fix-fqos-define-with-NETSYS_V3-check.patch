@@ -1,0 +1,12 @@
+--- a/drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c
++++ b/drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c
+@@ -2708,7 +2708,9 @@ int mtk_sw_nat_hook_tx(struct sk_buff *skb, int gmac_no)
+ 	struct hnat_flow_entry *flow_entry;
+ 	struct ethhdr *eth;
+ 	struct nf_conn *ct;
++#if defined(CONFIG_MEDIATEK_NETSYS_V3)
+ 	u32 fqos = (IS_HQOS_DL_MODE && skb->mark);
++#endif
+ 	enum ip_conntrack_info ctinfo;
+ 
+ 	if (!skb_hnat_is_hashed(skb) || skb_hnat_ppe(skb) >= CFG_PPE_NUM)

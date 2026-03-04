@@ -1,0 +1,29 @@
+From 531ccc92526f153c819e88517992c5d36cc42712 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Sat, 22 Nov 2025 21:46:06 +0800
+Subject: [PATCH 27/64] mtk: mtwifi-cfg: add wifi-scripts to dependencies -
+ mtwifi-cfg is sourcing `/lib/netifd/netifd-wireless.sh` in
+ `netifd/mtwifi.sh`, which is a part of wifi-scripts, so we add wifi-scripts
+ to its dependencies.
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ package/mtk/applications/mtwifi-cfg/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/package/mtk/applications/mtwifi-cfg/Makefile b/package/mtk/applications/mtwifi-cfg/Makefile
+index ae31d4d866..069d0038e7 100644
+--- a/package/mtk/applications/mtwifi-cfg/Makefile
++++ b/package/mtk/applications/mtwifi-cfg/Makefile
+@@ -16,7 +16,7 @@ define Package/mtwifi-cfg
+   CATEGORY:=MTK Properties
+   SUBMENU:=Applications
+   TITLE:=mtwifi configure scripts for mt798x
+-  DEPENDS:=+iwinfo +wifi-dats +lua-cjson +datconf-lua @!PACKAGE_luci-app-mtk @!PACKAGE_wifi-profile
++  DEPENDS:=+iwinfo +wifi-scripts +wifi-dats +lua-cjson +datconf-lua @!PACKAGE_luci-app-mtk @!PACKAGE_wifi-profile
+ endef
+ 
+ define Build/Compile
+-- 
+2.50.1 (Apple Git-155)
+

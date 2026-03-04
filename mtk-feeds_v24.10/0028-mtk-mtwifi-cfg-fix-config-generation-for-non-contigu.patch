@@ -1,0 +1,94 @@
+From f1666c5d82e041b65f3d15d26d2aeec7d3db9091 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Sun, 23 Nov 2025 20:07:32 +0800
+Subject: [PATCH 28/64] mtk: mtwifi-cfg: fix config generation for
+ non-contiguous interfaces The previous implementation iterated through
+ interfaces using a calculated count (`vif_num`) and a constructed key string
+ (`%02d`). This logic is flawed when interface keys are not contiguous (e.g.,
+ having keys "00" and "02" after deleting "01"). In such cases, `vif_num`
+ would be 2, and the loop would check "00" and "01", completely skipping "02".
+ This resulted in missing configurations in the generated DAT file.
+
+Additionally, the STA (ApCli) configuration loop used `pairs()`, which does not guarantee order. This could lead to non-deterministic behavior if multiple STA interfaces are present in the config.
+
+This patch fixes the issues by:
+1. Adding `get_sorted_if_keys` helper to `mtwifi_utils` to collect and sort interface keys.
+2. Refactoring loops in `mtwifi_cfg_foreach_vif` and `mtwifi_cfg_setup` to iterate over these sorted keys instead of using index prediction.
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../mtwifi-cfg/files/mtwifi-cfg/mtwifi_cfg    | 21 +++++++++++--------
+ .../files/mtwifi-cfg/mtwifi_utils.lua         |  9 ++++++++
+ 2 files changed, 21 insertions(+), 9 deletions(-)
+
+diff --git a/package/mtk/applications/mtwifi-cfg/files/mtwifi-cfg/mtwifi_cfg b/package/mtk/applications/mtwifi-cfg/files/mtwifi-cfg/mtwifi_cfg
+index bca87eca0c..d7cfb78670 100755
+--- a/package/mtk/applications/mtwifi-cfg/files/mtwifi-cfg/mtwifi_cfg
++++ b/package/mtk/applications/mtwifi-cfg/files/mtwifi-cfg/mtwifi_cfg
+@@ -179,10 +179,11 @@ end
+ function mtwifi_cfg_foreach_vif(cfg, mode, func)
+     if cfg == nil or func == nil then return end
+ 
+-    local vif_num,_,_ = vif_count(cfg)
+-    for idx=0,vif_num-1 do
+-        local v = cfg.interfaces[string.format("%02d", idx)]
+-        if v.config.mode and v.config.mode == mode then
++    local if_keys = utils.get_sorted_if_keys(cfg.interfaces)
++
++    for _, key in ipairs(if_keys) do
++        local v = cfg.interfaces[key]
++        if v and v.config and v.config.mode and v.config.mode == mode then
+             func(v)
+         end
+     end
+@@ -452,8 +453,10 @@ function mtwifi_cfg_setup(argv)
+     dats.ApCliPMFMFPR = 0
+     dats.ApCliPMFSHA256 = 0
+ 
+-    for _,v in pairs(cfg.interfaces) do
+-        if v.config.mode == "sta" then
++    local if_keys = utils.get_sorted_if_keys(cfg.interfaces)
++    for _, key in ipairs(if_keys) do
++        local v = cfg.interfaces[key]
++        if v.config and v.config.mode == "sta" then
+             if not v.config.disabled then
+                 dats.ApCliEnable = 1
+             end
+@@ -549,9 +552,9 @@ function mtwifi_cfg_setup(argv)
+ 
+     -- setup vif cfgs
+     local apidx = 1
+-    for idx = 0,vif_num-1 do
+-        v = cfg.interfaces[string.format("%02d", idx)]
+-        if v.config.mode == "ap" then
++    for _, key in ipairs(if_keys) do
++        local v = cfg.interfaces[key]
++        if v.config and v.config.mode == "ap" then
+             set_idx_dat(dats, apidx, "SSID", v.config.ssid)
+             set_idx_dat(dats, apidx, "WPAPSK", v.config.key or "")
+             set_dat(dats, apidx, "NoForwarding", v.config.isolate)
+diff --git a/package/mtk/applications/mtwifi-cfg/files/mtwifi-cfg/mtwifi_utils.lua b/package/mtk/applications/mtwifi-cfg/files/mtwifi-cfg/mtwifi_utils.lua
+index 4a224eaea0..eed6b6cc67 100644
+--- a/package/mtk/applications/mtwifi-cfg/files/mtwifi-cfg/mtwifi_utils.lua
++++ b/package/mtk/applications/mtwifi-cfg/files/mtwifi-cfg/mtwifi_utils.lua
+@@ -23,6 +23,15 @@ function mtwifi_utils.trim(s)
+     if s then return (s:gsub("^%s*(.-)%s*$", "%1")) end
+ end
+ 
++function mtwifi_utils.get_sorted_if_keys(interfaces)
++    local keys = {}
++    for k in pairs(interfaces or {}) do
++        table.insert(keys, k)
++    end
++    table.sort(keys)
++    return keys
++end
++
+ function mtwifi_utils.exists(path)
+     local fp = io.open(path, "rb")
+     if fp then fp:close() end
+-- 
+2.50.1 (Apple Git-155)
+

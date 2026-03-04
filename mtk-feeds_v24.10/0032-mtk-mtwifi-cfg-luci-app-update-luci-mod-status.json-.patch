@@ -1,0 +1,86 @@
+From 106e158a1dbbcf4061956e0bd5cf1550944803f0 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Mon, 24 Nov 2025 23:33:51 +0800
+Subject: [PATCH 32/64] mtk: mtwifi-cfg: luci app: update luci-mod-status.json
+ hack - some keys and logic has been changed, so we update to fix display
+ issues
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../luci-app-mtwifi-cfg/luci-mod-status.json  | 38 +++++++++++++++----
+ 1 file changed, 31 insertions(+), 7 deletions(-)
+
+diff --git a/package/mtk/applications/luci-app-mtwifi-cfg/root/usr/share/luci-app-mtwifi-cfg/luci-mod-status.json b/package/mtk/applications/luci-app-mtwifi-cfg/root/usr/share/luci-app-mtwifi-cfg/luci-mod-status.json
+index 508fa4e683..f84ec02387 100644
+--- a/package/mtk/applications/luci-app-mtwifi-cfg/root/usr/share/luci-app-mtwifi-cfg/luci-mod-status.json
++++ b/package/mtk/applications/luci-app-mtwifi-cfg/root/usr/share/luci-app-mtwifi-cfg/luci-mod-status.json
+@@ -11,27 +11,51 @@
+ 		}
+ 	},
+ 
++	"admin/status/routes": {
++		"title": "Routing",
++		"order": 2,
++		"action": {
++			"type": "view",
++			"path": "status/routes"
++		},
++		"depends": {
++			"acl": [ "luci-mod-status-routes" ]
++		}
++	},
++
+ 	"admin/status/iptables": {
+ 		"title": "Firewall",
+-		"order": 2,
++		"order": 3,
+ 		"action": {
+ 			"type": "view",
+ 			"path": "status/iptables"
+ 		},
+ 		"depends": {
+-			"acl": [ "luci-mod-status-firewall" ]
++			"acl": [ "luci-mod-status-firewall" ],
++			"fs": [
++				{ "/usr/sbin/nft": "absent", "/usr/sbin/iptables": "executable" },
++				{ "/usr/sbin/nft": "absent", "/usr/sbin/ip6tables": "executable" }
++			]
+ 		}
+ 	},
+ 
+-	"admin/status/routes": {
+-		"title": "Routes",
++	"admin/status/nftables": {
++		"title": "Firewall",
+ 		"order": 3,
+ 		"action": {
+ 			"type": "view",
+-			"path": "status/routes"
++			"path": "status/nftables"
+ 		},
+ 		"depends": {
+-			"acl": [ "luci-mod-status-routes" ]
++			"acl": [ "luci-mod-status-firewall" ],
++			"fs": { "/usr/sbin/nft": "executable" }
++		}
++	},
++
++	"admin/status/nftables/iptables": {
++		"action": {
++			"type": "view",
++			"path": "status/iptables"
+ 		}
+ 	},
+ 
+@@ -112,7 +136,7 @@
+ 	},
+ 
+ 	"admin/status/realtime/bandwidth": {
+-		"title": "Traffic",
++		"title": "Bandwidth",
+ 		"order": 2,
+ 		"action": {
+ 			"type": "view",
+-- 
+2.50.1 (Apple Git-155)
+

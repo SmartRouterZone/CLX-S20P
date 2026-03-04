@@ -1,0 +1,111 @@
+From ffbde67cb7cba30d268263d9bfb62a95f86f25cc Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Fri, 28 Nov 2025 22:35:37 +0800
+Subject: [PATCH 63/64] [][kernel-6.6][common][hnat][Add support of multiple
+ dsa switch PPPQ]
+
+[Description]
+Add support of multiple dsa switch PPPQ.
+
+Without this patch, when multiple dsa switch exists,
+the same QDMA TX queue would be used by two different
+DSA device if their dp->index are the same, which would
+leads to throughput bound in QDMA queue.
+
+Command to dump PPPQ TXQ mapping
+	cat /sys/kernel/debug/hnat/qdma_pppq
+
+[Release-log]
+N/A
+
+Change-Id: I71823297375c05de27e40dc4d81d082c32e15fe7
+Reviewed-on: https://gerrit.mediatek.inc/c/openwrt/feeds/mtk_openwrt_feeds/+/11376650
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../ethernet/mediatek/mtk_hnat/hnat_debugfs.c | 14 ++++++++++++++
+ .../ethernet/mediatek/mtk_hnat/hnat_nf_hook.c | 19 ++++++++++++++-----
+ 2 files changed, 28 insertions(+), 5 deletions(-)
+
+diff --git a/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat_debugfs.c b/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat_debugfs.c
+index 8e84c632a1..b52704d3b4 100644
+--- a/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat_debugfs.c
++++ b/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat_debugfs.c
+@@ -3468,6 +3468,20 @@ int hnat_init_debugfs(struct mtk_hnat *h)
+ 		debugfs_create_symlink(name, root, name_symlink);
+ 	}
+ 
++#if defined(CONFIG_MEDIATEK_NETSYS_V3)
++	ret = snprintf(name, sizeof(name), "qdma_pppq");
++	if (ret != strlen(name)) {
++		ret = -ENOMEM;
++		goto err1;
++	}
++	ret = snprintf(name_symlink, sizeof(name_symlink), "/sys/kernel/debug/mtketh/qdma_pppq");
++	if (ret != strlen(name_symlink)) {
++		ret = -ENOMEM;
++		goto err1;
++	}
++	debugfs_create_symlink(name, root, name_symlink);
++#endif
++
+ 	return 0;
+ 
+ err1:
+diff --git a/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c b/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c
+index d7a1038a82..28648aaee5 100644
+--- a/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c
++++ b/target/linux/mediatek/files-6.6/drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c
+@@ -1903,6 +1903,7 @@ static int skb_to_hnat_info(struct sk_buff *skb,
+ 	struct list_head *iter;
+ 	struct foe_entry entry = { 0 };
+ 	struct hnat_flow_entry *flow_entry;
++	struct mtk_eth *eth;
+ 	struct mtk_mac *mac;
+ 	struct iphdr *iph;
+ 	struct ipv6hdr *ip6h;
+@@ -2481,9 +2482,14 @@ hnat_entry_bind:
+ 
+ 	if (IS_HQOS_MODE || (skb->mark & MTK_QDMA_QUEUE_MASK) >= MAX_PPPQ_QUEUE_NUM)
+ 		qid = skb->mark & (MTK_QDMA_QUEUE_MASK);
+-	else if (IS_PPPQ_MODE && IS_PPPQ_PATH(dev, skb))
+-		qid = ((port_id >= 0) ? 3 + port_id : mac->id) & MTK_QDMA_QUEUE_MASK;
+-	else
++	else if (IS_PPPQ_MODE && IS_PPPQ_PATH(dev, skb)) {
++		eth = mac->hw;
++		/* Add the DSA switch offset and use the DSA user-port ordering index */
++		if (port_id >= 0 && port_id < ARRAY_SIZE(mac->dsa_user_idx))
++			qid = MTK_MAX_DEVS + eth->pppq_ofs[mac->id] + mac->dsa_user_idx[port_id];
++		else
++			qid = mac->id;
++	} else
+ 		qid = 0;
+ 
+ 	if (IS_PPPQ_MODE && IS_PPPQ_PATH(dev, skb) && port_id >= 0) {
+@@ -2495,7 +2501,7 @@ hnat_entry_bind:
+ 					      skb_transport_offset(skb) - tcp_hdrlen(skb);
+ 				/* Dispatch ACK packets to high priority queue */
+ 				if (payload_len == 0)
+-					qid += MAX_SWITCH_PORT_NUM;
++					qid += eth->pppq_ofs[MTK_MAX_DEVS];
+ 			}
+ 		} else if (h_proto == ETH_P_IPV6) {
+ 			ip6h = ipv6_hdr(skb);
+@@ -2504,11 +2510,14 @@ hnat_entry_bind:
+ 				payload_len = be16_to_cpu(ip6h->payload_len) - tcp_hdrlen(skb);
+ 				/* Dispatch ACK packets to high priority queue */
+ 				if (payload_len == 0)
+-					qid += MAX_SWITCH_PORT_NUM;
++					qid += eth->pppq_ofs[MTK_MAX_DEVS];
+ 			}
+ 		}
+ 	}
+ 
++	/* Make qid valid for qdma */
++	qid &= MTK_QDMA_QUEUE_MASK;
++
+ 	if (IS_IPV4_GRP(&entry)) {
+ 		entry.ipv4_hnapt.iblk2.dp = gmac & 0xf;
+ #if defined(CONFIG_MEDIATEK_NETSYS_V2) || defined(CONFIG_MEDIATEK_NETSYS_V3)
+-- 
+2.50.1 (Apple Git-155)
+

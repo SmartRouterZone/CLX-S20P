@@ -1,0 +1,45 @@
+From 67eed202eb67ea5d48cef1e59aba5b901c63734e Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Fri, 21 Nov 2025 20:43:28 +0800
+Subject: [PATCH 19/64] mediatek: dts: refine hnat DT for mt7981 and mt7986 -
+ for mt7981 and mt7986, we change `mtketh-wan` and `mtketh-lan` to most
+ frequently used labels of logical wan and lan ports to avoid hnat
+ accelerating failure.
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi        | 4 ++--
+ .../999-2799-2-mtkhnat-add-mtkhnat-support-for-mt7986a.patch  | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi b/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi
+index 24c842505c..296d0ac7d8 100644
+--- a/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi
++++ b/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi
+@@ -188,8 +188,8 @@
+ 			resets = <&ethsys 0>;
+ 			reset-names = "mtketh";
+ 			status = "okay";
+-			mtketh-wan = "eth1";
+-			mtketh-lan = "eth0";
++			mtketh-wan = "wan";
++			mtketh-lan = "lan";
+ 			mtketh-max-gmac = <2>;
+ 			mtketh-ppe-num = <2>;
+ 		};
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-2-mtkhnat-add-mtkhnat-support-for-mt7986a.patch b/target/linux/mediatek/patches-6.6/999-2799-2-mtkhnat-add-mtkhnat-support-for-mt7986a.patch
+index aae098071f..48df6aad47 100644
+--- a/target/linux/mediatek/patches-6.6/999-2799-2-mtkhnat-add-mtkhnat-support-for-mt7986a.patch
++++ b/target/linux/mediatek/patches-6.6/999-2799-2-mtkhnat-add-mtkhnat-support-for-mt7986a.patch
+@@ -13,7 +13,7 @@ index bb3feca0f..299503d7a 100644
+ +			reset-names = "mtketh";
+ +			status = "okay";
+ +			mtketh-wan = "eth1";
+-+			mtketh-lan = "eth0";
+++			mtketh-lan = "lan";
+ +			mtketh-max-gmac = <2>;
+ +			mtketh-ppe-num = <2>;
+ +		};
+-- 
+2.50.1 (Apple Git-155)
+

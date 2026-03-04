@@ -1,0 +1,148 @@
+From a855ce0fd7beac0a9880aa4b5431f741bc7e08b5 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Sat, 22 Nov 2025 15:21:13 +0800
+Subject: [PATCH 23/64] mtk: conninfra: fix CONNSYS ChipID read failure This
+ patch fixes a critical initialization failure where the CONNSYS HW IP version
+ is read as 0x0. In kernel 6.6, the Common Clock Framework (CCF) disables
+ unused clocks by default to save power. The CONNSYS hardware was not clocking
+ when the driver attempted to poll the ChipID register, resulting in a read
+ value of 0x0.
+
+Changes made:
+- driver: explicitly request and enable `mcu` and `ap2conn` clocks during the probe phase using `clk_prepare_enable`.
+- DT: The `consys` node lacked clock definitions, causing `devm_clk_get` to fail. We replicated the clock properties from the `wifi` node to the `consys` node to ensure the driver can correctly acquire the clock resources.
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ ...add-pull-up-mcu-and-ap2conn-manually.patch | 37 +++++++++++++++++++
+ .../arch/arm64/boot/dts/mediatek/mt7981.dtsi  |  4 ++
+ ...4-mtk-add-mtwifi-support-for-mt7986a.patch | 16 +++++---
+ 3 files changed, 51 insertions(+), 6 deletions(-)
+ create mode 100644 package/mtk/drivers/conninfra/patches/005-add-pull-up-mcu-and-ap2conn-manually.patch
+
+diff --git a/package/mtk/drivers/conninfra/patches/005-add-pull-up-mcu-and-ap2conn-manually.patch b/package/mtk/drivers/conninfra/patches/005-add-pull-up-mcu-and-ap2conn-manually.patch
+new file mode 100644
+index 0000000000..66f4d8ee0c
+--- /dev/null
++++ b/package/mtk/drivers/conninfra/patches/005-add-pull-up-mcu-and-ap2conn-manually.patch
+@@ -0,0 +1,37 @@
++--- a/platform/consys_hw.c
+++++ b/platform/consys_hw.c
++@@ -19,6 +19,7 @@
++ #define pr_fmt(fmt) KBUILD_MODNAME "@(%s:%d) " fmt, __func__, __LINE__
++ 
++ 
+++#include <linux/clk.h>
++ #include <linux/delay.h>
++ #include <linux/of_device.h>
++ #include <linux/of_reserved_mem.h>
++@@ -518,6 +519,7 @@ int consys_hw_pmic_event_cb(unsigned int
++ int mtk_conninfra_probe(struct platform_device *pdev)
++ {
++ 	int ret = -1;
+++	struct clk *mcu_clk, *ap_conn_clk;
++ 
++ 	if (pdev)
++ 		g_pdev = pdev;
++@@ -532,6 +534,18 @@ int mtk_conninfra_probe(struct platform_
++ 		return -2;
++ 	}
++ 
+++	mcu_clk = devm_clk_get(&pdev->dev, "mcu");
+++	if (IS_ERR(mcu_clk))
+++		pr_err("mcu clock not found\n");
+++	if (clk_prepare_enable(mcu_clk))
+++		pr_err("mcu clock configuration failed\n");
+++
+++	ap_conn_clk = devm_clk_get(&pdev->dev, "ap2conn");
+++	if (IS_ERR(ap_conn_clk))
+++		pr_err("ap2conn clock not found\n");
+++	if (clk_prepare_enable(ap_conn_clk))
+++		pr_err("ap2conn clock configuration failed\n");
+++
++ 	if (consys_hw_ops == NULL)
++ 		consys_hw_ops = (const struct consys_hw_ops_struct*)g_conninfra_plat_data->hw_ops;
++ 	if (consys_hw_ops == NULL) {
+diff --git a/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi b/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi
+index 296d0ac7d8..e605ae0150 100644
+--- a/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi
++++ b/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi
+@@ -136,6 +136,10 @@
+ 			compatible = "mediatek,mt7981-consys";
+ 			reg = <0 0x10000000 0 0x8600000>;
+ 			memory-region = <&wmcpu_emi>;
++			/* This is synced from driver changes */
++			clocks = <&topckgen CLK_TOP_NETSYS_MCU_SEL>,
++				 <&topckgen CLK_TOP_AP2CNN_HOST_SEL>;
++			clock-names = "mcu", "ap2conn";
+ 		};
+ 
+ 		infracfg: clock-controller@10001000 {
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-4-mtk-add-mtwifi-support-for-mt7986a.patch b/target/linux/mediatek/patches-6.6/999-2799-4-mtk-add-mtwifi-support-for-mt7986a.patch
+index 348c93d2f2..fd533240a8 100644
+--- a/target/linux/mediatek/patches-6.6/999-2799-4-mtk-add-mtwifi-support-for-mt7986a.patch
++++ b/target/linux/mediatek/patches-6.6/999-2799-4-mtk-add-mtwifi-support-for-mt7986a.patch
+@@ -1,5 +1,5 @@
+ diff --git a/arch/arm64/boot/dts/mediatek/mt7986a.dtsi b/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
+-index 7aa42ce3d..5025a69e9 100644
++index 7aa42ce3d..cc3b64d79 100644
+ --- a/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
+ +++ b/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
+ @@ -84,23 +84,30 @@ secmon_reserved: secmon@43000000 {
+@@ -33,7 +33,7 @@ index 7aa42ce3d..5025a69e9 100644
+  		};
+  	};
+  
+-@@ -123,6 +130,12 @@ gic: interrupt-controller@c000000 {
++@@ -123,6 +130,16 @@ gic: interrupt-controller@c000000 {
+  			#interrupt-cells = <3>;
+  		};
+  
+@@ -41,12 +41,16 @@ index 7aa42ce3d..5025a69e9 100644
+ +			compatible = "mediatek,mt7986-consys";
+ +			reg = <0 0x10000000 0 0x8600000>;
+ +			memory-region = <&wmcpu_emi>;
+++			/* This is synced from driver changes */
+++			clocks = <&topckgen CLK_TOP_CONN_MCUSYS_SEL>, /* DIFFERENT from mt7981 */
+++				 <&topckgen CLK_TOP_AP2CNN_HOST_SEL>;
+++			clock-names = "mcu", "ap2conn";
+ +		};
+ +
+  		infracfg: infracfg@10001000 {
+  			compatible = "mediatek,mt7986-infracfg", "syscon";
+  			reg = <0 0x10001000 0 0x1000>;
+-@@ -131,7 +144,8 @@ infracfg: infracfg@10001000 {
++@@ -131,7 +148,8 @@ infracfg: infracfg@10001000 {
+  		};
+  
+  		wed_pcie: wed-pcie@10003000 {
+@@ -56,7 +60,7 @@ index 7aa42ce3d..5025a69e9 100644
+  				     "syscon";
+  			reg = <0 0x10003000 0 0x10>;
+  		};
+-@@ -520,41 +534,39 @@ ethsysrst: reset-controller {
++@@ -520,41 +538,39 @@ ethsysrst: reset-controller {
+  			};
+          };
+  
+@@ -122,7 +126,7 @@ index 7aa42ce3d..5025a69e9 100644
+  			clocks = <&ethsys CLK_ETH_FE_EN>,
+  				 <&ethsys CLK_ETH_GP2_EN>,
+  				 <&ethsys CLK_ETH_GP1_EN>,
+-@@ -585,51 +597,55 @@ eth: ethernet@15100000 {
++@@ -585,51 +601,55 @@ eth: ethernet@15100000 {
+  			mediatek,ethsys = <&ethsys>;
+  			mediatek,sgmiisys = <&sgmiisys0>, <&sgmiisys1>;
+  			mediatek,wed-pcie = <&wed_pcie>;
+@@ -200,7 +204,7 @@ index 7aa42ce3d..5025a69e9 100644
+  			reg = <0 0x18000000 0 0x1000000>,
+  			      <0 0x10003000 0 0x1000>,
+  			      <0 0x11d10000 0 0x1000>;
+-@@ -642,6 +658,7 @@ wifi: wifi@18000000 {
++@@ -642,6 +662,7 @@ wifi: wifi@18000000 {
+  				     <GIC_SPI 214 IRQ_TYPE_LEVEL_HIGH>,
+  				     <GIC_SPI 215 IRQ_TYPE_LEVEL_HIGH>,
+  				     <GIC_SPI 216 IRQ_TYPE_LEVEL_HIGH>;
+-- 
+2.50.1 (Apple Git-155)
+

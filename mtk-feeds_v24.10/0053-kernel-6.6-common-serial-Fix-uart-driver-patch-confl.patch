@@ -1,0 +1,62 @@
+From b9eaec187faf2d34b0d435b777141ed732f60b62 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Fri, 28 Nov 2025 20:57:43 +0800
+Subject: [PATCH 53/64] [][kernel-6.6][common][serial][Fix uart driver patch
+ conflict]
+
+[Description]
+Fix uart driver patch conflict caused by the patch have been merge in to linux kernel
+
+[Release-log]
+N/A
+
+Change-Id: I6d5cc90ad1e6db39fc5f88019a14a70157825413
+Reviewed-on: https://gerrit.mediatek.inc/c/openwrt/feeds/mtk_openwrt_feeds/+/11386965
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ ...ix-clock-setting-for-mediatek-serial.patch | 33 -------------------
+ 1 file changed, 33 deletions(-)
+ delete mode 100644 target/linux/mediatek/patches-6.6/999-serial-01-tty-serial-8250-fix-clock-setting-for-mediatek-serial.patch
+
+diff --git a/target/linux/mediatek/patches-6.6/999-serial-01-tty-serial-8250-fix-clock-setting-for-mediatek-serial.patch b/target/linux/mediatek/patches-6.6/999-serial-01-tty-serial-8250-fix-clock-setting-for-mediatek-serial.patch
+deleted file mode 100644
+index d12c493985..0000000000
+--- a/target/linux/mediatek/patches-6.6/999-serial-01-tty-serial-8250-fix-clock-setting-for-mediatek-serial.patch
++++ /dev/null
+@@ -1,33 +0,0 @@
+-From 097e44d543467b45e03c5b976c6e6e0a8bd55012 Mon Sep 17 00:00:00 2001
+-From: Sam Shih <sam.shih@mediatek.com>
+-Date: Mon, 20 Jan 2025 19:51:07 +0800
+-Subject: [PATCH 3/3] tty: serial: 8250: fix clock setting for mediatek serial
+- driver
+-
+----
+- drivers/tty/serial/8250/8250_mtk.c | 4 ++--
+- 1 file changed, 2 insertions(+), 2 deletions(-)
+-
+-diff --git a/drivers/tty/serial/8250/8250_mtk.c b/drivers/tty/serial/8250/8250_mtk.c
+-index 28f9a267..c9296ff0 100644
+---- a/drivers/tty/serial/8250/8250_mtk.c
+-+++ b/drivers/tty/serial/8250/8250_mtk.c
+-@@ -475,13 +475,13 @@ static int mtk8250_probe_of(struct platform_device *pdev, struct uart_port *p,
+- 	int dmacnt;
+- #endif
+- 
+--	data->uart_clk = devm_clk_get(&pdev->dev, "baud");
+-+	data->uart_clk = devm_clk_get_enabled(&pdev->dev, "baud");
+- 	if (IS_ERR(data->uart_clk)) {
+- 		/*
+- 		 * For compatibility with older device trees try unnamed
+- 		 * clk when no baud clk can be found.
+- 		 */
+--		data->uart_clk = devm_clk_get(&pdev->dev, NULL);
+-+		data->uart_clk = devm_clk_get_enabled(&pdev->dev, NULL);
+- 		if (IS_ERR(data->uart_clk)) {
+- 			dev_warn(&pdev->dev, "Can't get uart clock\n");
+- 			return PTR_ERR(data->uart_clk);
+--- 
+-2.45.2
+-
+-- 
+2.50.1 (Apple Git-155)
+

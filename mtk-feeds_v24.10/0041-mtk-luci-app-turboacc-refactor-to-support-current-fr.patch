@@ -1,0 +1,340 @@
+From 8b68c03eac7cf89467e5e8bba27398db547ebe95 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Wed, 26 Nov 2025 00:12:24 +0800
+Subject: [PATCH 41/64] mtk: luci-app-turboacc: refactor to support current
+ framework - since we have adjusted hnat toggle and stats return formats,
+ along with binding threshold setting way, we refactored hnat related settings
+ and value parsing in rpc calls - we removed some deprecated flags that were
+ for hanwckf repo only - also, nft-fullcone was introduced, we added support
+ for it
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../luci-static/resources/view/turboacc.js    | 112 +++++++++++-------
+ .../root/etc/init.d/turboacc                  |  28 +++--
+ .../root/etc/uci-defaults/turboacc            |   8 +-
+ .../root/usr/libexec/rpcd/luci.turboacc       |  48 ++++++--
+ 4 files changed, 123 insertions(+), 73 deletions(-)
+
+diff --git a/package/mtk/applications/luci-app-turboacc-mtk/htdocs/luci-static/resources/view/turboacc.js b/package/mtk/applications/luci-app-turboacc-mtk/htdocs/luci-static/resources/view/turboacc.js
+index b2276a9ff4..823b7cc9d8 100644
+--- a/package/mtk/applications/luci-app-turboacc-mtk/htdocs/luci-static/resources/view/turboacc.js
++++ b/package/mtk/applications/luci-app-turboacc-mtk/htdocs/luci-static/resources/view/turboacc.js
+@@ -129,26 +129,48 @@ return view.extend({
+ 				])
+ 			]);
+ 
+-			if (ppe_stats.hasOwnProperty('PPE_NUM')) {
++			if (ppe_stats && ppe_stats['PPE num']) {
+ 				poll.add(function () {
+ 					return L.resolveDefault(getMTKPPEStatus()).then(function (res) {
+-						var ppe_num = parseInt(res[0].PPE_NUM);
+-						for (var i=0; i<ppe_num; i++) {
+-							var ppe_bar = document.getElementById(`ppe${i}_entry`);
+-							ppe_bar.innerHTML = E('td', {},
+-							progressbar(res[0][`BIND_PPE${i}`], res[0][`ALL_PPE${i}`])).innerHTML;
++						var stats = res[0]; 
++
++						if (stats && stats['PPE num']) {
++							var ppe_num = parseInt(stats['PPE num']);
++							
++							for (var i = 0; i < ppe_num; i++) {
++								var ppe_bar = document.getElementById(`ppe${i}_entry`);
++								var ppe_key = 'PPE' + i;
++
++								if (ppe_bar && stats[ppe_key]) {
++									var bind_num = stats[ppe_key]['BIND state num'];
++									var total_num = stats[ppe_key]['entry num'];
++									
++									ppe_bar.innerHTML = E('td', {},
++										progressbar(bind_num, total_num)
++									).innerHTML;
++								}
++							}
+ 						}
+ 					});
+ 				}, 3);
+ 
+-				var ppe_num = parseInt(ppe_stats.PPE_NUM);
++				var ppe_num = parseInt(ppe_stats['PPE num']);
+ 
+-				for (var i=0; i<ppe_num; i++) {
+-					acc_status.appendChild(E('tr', {}, [
+-						E('td', { 'width': '33%' }, `PPE${i} ` + _('Bind Entries')),
+-						E('td', {'id': `ppe${i}_entry` },
+-						progressbar(ppe_stats[`BIND_PPE${i}`], ppe_stats[`ALL_PPE${i}`]))
+-					]));
++				for (var i = 0; i < ppe_num; i++) {
++					var ppe_key = 'PPE' + i;
++
++					if (ppe_stats[ppe_key]) {
++						var bind_num = ppe_stats[ppe_key]['BIND state num'];
++						var total_num = ppe_stats[ppe_key]['entry num'];
++
++						acc_status.appendChild(E('tr', {}, [
++							E('td', { 'width': '33%' }, `${ppe_key} ` + _('Bind Entries')),
++							
++							E('td', {'id': `ppe${i}_entry` },
++								progressbar(bind_num, total_num)
++							)
++						]));
++					}
+ 				}
+ 			}
+ 
+@@ -214,49 +236,49 @@ return view.extend({
+ 			o.depends('fastpath', 'fast_classifier');
+ 		}
+ 
+-		o = s.option(form.Flag, 'fastpath_mh_eth_hnat', _('Enable ethernet HNAT'),
+-			_('Enable hardware offloading for wired connections.'));
+-		o.default = o.enabled;
+-		o.rmempty = false;
+-		o.depends('fastpath', 'mediatek_hnat');
+-
+-		o = s.option(form.Flag, 'fastpath_mh_eth_hnat_v6', _('Enable ethernet IPv6 HNAT'),
+-			_('Enable hardware offloading for wired IPv6 connections.'));
+-		o.default = o.enabled;
+-		o.rmempty = false;
+-		o.depends('fastpath_mh_eth_hnat', '1');
++		// o = s.option(form.Flag, 'fastpath_mh_eth_hnat', _('Enable ethernet HNAT'),
++		// 	_('Enable hardware offloading for wired connections.'));
++		// o.default = o.enabled;
++		// o.rmempty = false;
++		// o.depends('fastpath', 'mediatek_hnat');
++
++		// o = s.option(form.Flag, 'fastpath_mh_eth_hnat_v6', _('Enable ethernet IPv6 HNAT'),
++		// 	_('Enable hardware offloading for wired IPv6 connections.'));
++		// o.default = o.enabled;
++		// o.rmempty = false;
++		// o.depends('fastpath_mh_eth_hnat', '1');
+ 		
+-		o = s.option(form.Flag, 'fastpath_mh_eth_hnat_macvlan', _('Enable ethernet HNAT for MACVLAN WAN device'),
+-			_('Enable hardware offloading for macvlan (sing wan only).'));
+-		o.default = o.disabled;
+-		o.rmempty = false;
+-		o.depends('fastpath_mh_eth_hnat', '1');
++		// o = s.option(form.Flag, 'fastpath_mh_eth_hnat_macvlan', _('Enable ethernet HNAT for MACVLAN WAN device'),
++		// 	_('Enable hardware offloading for macvlan (sing wan only).'));
++		// o.default = o.disabled;
++		// o.rmempty = false;
++		// o.depends('fastpath_mh_eth_hnat', '1');
+ 		
+ 		o = s.option(form.Value, 'fastpath_mh_eth_hnat_bind_rate', _('HNAT bind rate threshold (pps)'),
+ 			_('The smaller the threshold, the easier it is for the connection to be accelerated.'));
+ 		o.optional = true;
+ 		o.datatype = 'range(1,30)';
+ 		o.placeholder = 30;
+-		o.depends('fastpath_mh_eth_hnat', '1');
++		o.depends('fastpath', 'mediatek_hnat');
+ 
+ 		if (features.hasGMAC2) {
+-			o = s.option(form.ListValue, 'fastpath_mh_eth_hnat_ppenum', _('Number of HNAT PPE'),
+-				_('Apply this setting after reboot.'));
+-			o.rmempty = false;
+-			o.value(1);
+-			o.value(2);
+-			o.default = 1;
+-			o.depends('fastpath_mh_eth_hnat', '1');
++			// o = s.option(form.ListValue, 'fastpath_mh_eth_hnat_ppenum', _('Number of HNAT PPE'),
++			// 	_('Apply this setting after reboot.'));
++			// o.rmempty = false;
++			// o.value(1);
++			// o.value(2);
++			// o.default = 1;
++			// o.depends('fastpath_mh_eth_hnat', '1');
+ 		}
+ 
+-		o = s.option(form.ListValue, 'fullcone', _('Full cone NAT'),
+-			_('Full cone NAT (NAT1) can improve gaming performance effectively.'));
+-		o.value('0', _('Disable'))
+-		if (features.hasXTFULLCONENAT)
+-			o.value('1', _('XT_FULLCONE_NAT'));
+-		o.value('2', _('Boardcom_FULLCONE_NAT'));
+-		o.default = '0';
+-		o.rmempty = false;
++		// o = s.option(form.ListValue, 'fullcone', _('Full cone NAT'),
++		// 	_('Full cone NAT (NAT1) can improve gaming performance effectively.'));
++		// o.value('0', _('Disable'))
++		// if (features.hasXTFULLCONENAT)
++		// 	o.value('1', _('XT_FULLCONE_NAT'));
++		// o.value('2', _('Boardcom_FULLCONE_NAT'));
++		// o.default = '0';
++		// o.rmempty = false;
+ 
+ 		o = s.option(form.ListValue, 'tcpcca', _('TCP CCA'),
+ 			_('TCP congestion control algorithm.'));
+diff --git a/package/mtk/applications/luci-app-turboacc-mtk/root/etc/init.d/turboacc b/package/mtk/applications/luci-app-turboacc-mtk/root/etc/init.d/turboacc
+index 287e86a261..94a5d62a36 100755
+--- a/package/mtk/applications/luci-app-turboacc-mtk/root/etc/init.d/turboacc
++++ b/package/mtk/applications/luci-app-turboacc-mtk/root/etc/init.d/turboacc
+@@ -5,7 +5,13 @@
+ START=90
+ STOP=10
+ 
+-start() {
++USE_PROCD=1
++
++service_triggers() {
++	procd_add_reload_trigger "turboacc"
++}
++
++start_service() {
+ 	config_load "turboacc"
+ 
+ 	local fastpath
+@@ -52,26 +58,26 @@ start() {
+ 		if [ "$fastpath_mh_eth_hnat" -eq "1" ]; then
+ 			local fastpath_mh_eth_hnat_v6 fastpath_mh_eth_hnat_macvlan fastpath_mh_eth_hnat_bind_rate
+ 
+-			config_get_bool "fastpath_mh_eth_hnat_v6" "config" "fastpath_mh_eth_hnat_v6" "1"
+-			echo "8 $fastpath_mh_eth_hnat_v6" > "$hnat_path/hnat_setting"
++			# config_get_bool "fastpath_mh_eth_hnat_v6" "config" "fastpath_mh_eth_hnat_v6" "1"
++			# echo "8 $fastpath_mh_eth_hnat_v6" > "$hnat_path/hnat_setting"
+ 
+ 			config_get "fastpath_mh_eth_hnat_bind_rate" "config" "fastpath_mh_eth_hnat_bind_rate" "30"
+-			echo "11 $fastpath_mh_eth_hnat_bind_rate" > "$hnat_path/hnat_setting"
++			echo "1 $fastpath_mh_eth_hnat_bind_rate" > "$hnat_path/hnat_setting"
+ 
+-			config_get_bool "fastpath_mh_eth_hnat_macvlan" "config" "fastpath_mh_eth_hnat_macvlan" "0"
+-			echo "12 $fastpath_mh_eth_hnat_macvlan" > "$hnat_path/hnat_setting"
++			# config_get_bool "fastpath_mh_eth_hnat_macvlan" "config" "fastpath_mh_eth_hnat_macvlan" "0"
++			# echo "12 $fastpath_mh_eth_hnat_macvlan" > "$hnat_path/hnat_setting"
+ 		fi
+ 		;;
+ 	esac
+ 
+-	local fullcone
+-	config_get "fullcone" "config" "fullcone" "0"
+-	uci -q set "firewall.@defaults[0].fullcone"="$fullcone"
++	# local fullcone
++	# config_get "fullcone" "config" "fullcone" "0"
++	# uci -q set "firewall.@defaults[0].fullcone"="$fullcone"
+ 
+ 	local tcpcca
+ 	config_get "tcpcca" "config" "tcpcca" "cubic"
+ 	sysctl -w net.ipv4.tcp_congestion_control="$tcpcca" >"/dev/null"
+ 
+-	uci -q commit "firewall"
+-	/etc/init.d/firewall restart >"/dev/null" 2>&1
++	# uci -q commit "firewall"
++	# /etc/init.d/firewall restart >"/dev/null" 2>&1
+ }
+diff --git a/package/mtk/applications/luci-app-turboacc-mtk/root/etc/uci-defaults/turboacc b/package/mtk/applications/luci-app-turboacc-mtk/root/etc/uci-defaults/turboacc
+index ae828b6d7e..bb3f35a9e1 100644
+--- a/package/mtk/applications/luci-app-turboacc-mtk/root/etc/uci-defaults/turboacc
++++ b/package/mtk/applications/luci-app-turboacc-mtk/root/etc/uci-defaults/turboacc
+@@ -17,10 +17,10 @@ kernel_ver="$(uname -r)"
+ if [ -e "/lib/modules/$kernel_ver/mtkhnat.ko" ]; then
+ 	uci -q set "turboacc.config.fastpath"="mediatek_hnat"
+ 	uci -q set "turboacc.config.fastpath_mh_eth_hnat"="1"
+-	uci -q set "turboacc.config.fastpath_mh_eth_hnat_v6"="1"
+-	uci -q set "turboacc.config.fastpath_mh_eth_hnat_macvlan"="0"
++	# uci -q set "turboacc.config.fastpath_mh_eth_hnat_v6"="1"
++	# uci -q set "turboacc.config.fastpath_mh_eth_hnat_macvlan"="0"
+ 	uci -q set "turboacc.config.fastpath_mh_eth_hnat_bind_rate"="30"
+-	uci -q set "turboacc.config.fastpath_mh_eth_hnat_ppenum"="2"
++	# uci -q set "turboacc.config.fastpath_mh_eth_hnat_ppenum"="2"
+ elif [ -e "/lib/modules/$kernel_ver/fast-classifier.ko" ]; then
+ 	uci -q set "turboacc.config.fastpath"="fast_classifier"
+ 	uci -q set "turboacc.config.fastpath_fc_br"="1"
+@@ -35,7 +35,7 @@ else
+ 	uci -q set "turboacc.config.fastpath"="none"
+ fi
+ 
+-uci -q set "turboacc.config.fullcone"="0"
++# uci -q set "turboacc.config.fullcone"="0"
+ 
+ uci -q commit "turboacc"
+ 
+diff --git a/package/mtk/applications/luci-app-turboacc-mtk/root/usr/libexec/rpcd/luci.turboacc b/package/mtk/applications/luci-app-turboacc-mtk/root/usr/libexec/rpcd/luci.turboacc
+index cdc34117a3..66e70a2829 100755
+--- a/package/mtk/applications/luci-app-turboacc-mtk/root/usr/libexec/rpcd/luci.turboacc
++++ b/package/mtk/applications/luci-app-turboacc-mtk/root/usr/libexec/rpcd/luci.turboacc
+@@ -26,6 +26,7 @@ local methods = {
+ 				hasMEDIATEKHNAT   = fs.access("/lib/modules/" .. boardinfo.kernel .. "/mtkhnat.ko"),
+ 				hasGMAC2          = fs.access("/sys/class/net/eth1"),
+ 				hasXTFULLCONENAT  = fs.access("/lib/modules/" .. boardinfo.kernel .. "/xt_FULLCONENAT.ko"),
++				hasNFTFULLCONE    = fs.access("/lib/modules/" .. boardinfo.kernel .. "/nft_fullcone.ko"),
+ 				hasTCPCCA         = readfile("/proc/sys/net/ipv4/tcp_available_congestion_control")
+ 			}
+ 			print(json.stringify(features))
+@@ -34,20 +35,20 @@ local methods = {
+ 	getFastPathStat = {
+ 		call = function()
+ 			local fptype
+-			if fs.access("/sys/module/xt_FLOWOFFLOAD/refcnt") and
+-			(readfile("/sys/module/xt_FLOWOFFLOAD/refcnt") or "0") ~= "0" then
++			if (fs.access("/sys/module/xt_FLOWOFFLOAD/refcnt") and
++			(readfile("/sys/module/xt_FLOWOFFLOAD/refcnt") or "0") ~= "0") or
++			(fs.access("/sys/module/nft_flow_offload/refcnt") and
++			(readfile("/sys/module/nft_flow_offload/refcnt") or "0") ~= "0") then
+ 				fptype = "Flow offloading"
+ 			elseif fs.stat("/sys/module/fast_classifier", "type") == "dir" then
+ 				fptype = "Fast classifier"
+ 			elseif fs.stat("/sys/module/shortcut_fe_cm", "type") == "dir" then
+ 				fptype = "Shortcut-FE CM"
+ 			elseif fs.stat("/sys/kernel/debug/hnat", "type") == "dir" then
+-				local ethernet_hnat = readfile("/sys/kernel/debug/hnat/hook_toggle")
+-				ethernet_hnat = (ethernet_hnat ~= "enabled") and " / Ethernet HNAT Disabled" or ""
+-
+-				local wireless_hnat = (sys.call("grep -q 'WHNAT=1' '/etc/wireless/mediatek/'*_card*.dat") ~= 0) and " / Wireless HNAT Disabled" or ""
+-				if (ethernet_hnat == "") or (wireless_hnat == "") then
+-					fptype = "MediaTek HNAT" .. ethernet_hnat .. wireless_hnat
++				local hnat_toggle = readfile("/sys/kernel/debug/hnat/hook_toggle")
++				if hnat_toggle == "enabled" then
++					local wireless_hnat = (sys.call("grep -q 'WHNAT=1' '/etc/wireless/mediatek/'*_card*.dat") ~= 0) and " / Wireless HNAT Disabled" or ""
++					fptype = "MediaTek HNAT" .. wireless_hnat
+ 				end
+ 			end
+ 			print(json.stringify({ type = fptype }))
+@@ -56,7 +57,10 @@ local methods = {
+ 	getFullConeStat = {
+ 		call = function()
+ 			local fctype
+-			if fs.access("/sys/module/xt_FULLCONENAT/refcnt") and
++			if fs.access("/sys/module/nft_fullcone/refcnt") and
++			(readfile("/sys/module/nft_fullcone/refcnt") or "0") ~= "0" then
++				fctype = "nft_fullcone"
++			elseif fs.access("/sys/module/xt_FULLCONENAT/refcnt") and
+ 			(readfile("/sys/module/xt_FULLCONENAT/refcnt") or "0") ~= "0" then
+ 				fctype = "xt_FULLCONENAT"
+ 			elseif sys.call("iptables -t nat -L zone_wan_postrouting | grep -q fullcone") == 0 then
+@@ -77,12 +81,30 @@ local methods = {
+ 			local ppe_stat = {}
+ 			local ppe_path = "/sys/kernel/debug/hnat/hnat_stats"
+ 			local fd = io.open(ppe_path, 'r')
+-		
++
++			-- helper function to trim spaces
++			local function trim(s)
++				return (s:gsub("^%s*(.-)%s*$", "%1"))
++			end
++
+ 			if fd then
+ 				for line in fd:lines() do
+-					local i = string.find(line, "=")
+-					if i then
+-						ppe_stat[string.sub(line,1,i-1)] = string.sub(line,i+1)
++					-- match PPE0, PPE1 prefix
++					local prefix, content = line:match("^(.-):%s*(.+)$")
++					if prefix then
++						-- if ":" is matched, we are in sub-object PPEx
++						ppe_stat[prefix] = {}
++						
++						-- match k=v pattern
++						for k, v in content:gmatch("([^,=]+)=([^,]+)") do
++							ppe_stat[prefix][trim(k)] = trim(v)
++						end
++					else
++						-- try match top regular pattern like "PPE num=x"
++						local k, v = line:match("^([^=]+)=(.+)$")
++						if k then
++							ppe_stat[trim(k)] = trim(v)
++						end
+ 					end
+ 				end
+ 				fd:close()
+-- 
+2.50.1 (Apple Git-155)
+

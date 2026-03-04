@@ -1,0 +1,32 @@
+From a64368f279292e24d53e61a20aacd8bde5542f18 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Thu, 30 Oct 2025 21:32:07 +0800
+Subject: [PATCH 13/64] mediatek: dts: fix build issues
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../mediatek/dts/mt7988d-tplink-tl-7dr-common.dtsi     | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/target/linux/mediatek/dts/mt7988d-tplink-tl-7dr-common.dtsi b/target/linux/mediatek/dts/mt7988d-tplink-tl-7dr-common.dtsi
+index 604b329d61..49d175fc7d 100644
+--- a/target/linux/mediatek/dts/mt7988d-tplink-tl-7dr-common.dtsi
++++ b/target/linux/mediatek/dts/mt7988d-tplink-tl-7dr-common.dtsi
+@@ -327,3 +327,13 @@
+ &watchdog {
+ 	status = "okay";
+ };
++
++&cpu_thermal {
++    cooling-maps {
++        cpu-active-hot {
++            cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++                             <&cpu1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++                             <&cpu2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++        };
++    };
++};
+\ No newline at end of file
+-- 
+2.50.1 (Apple Git-155)
+

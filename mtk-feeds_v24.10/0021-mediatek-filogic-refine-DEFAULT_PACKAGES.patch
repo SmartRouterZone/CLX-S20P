@@ -1,0 +1,27 @@
+From f665353bcdcdcfd6cf7b8dc3ecc8342d857cddab Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Wed, 12 Nov 2025 00:09:22 +0800
+Subject: [PATCH 21/64] mediatek: filogic: refine DEFAULT_PACKAGES - remove
+ bridger - add mtk-smp
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ target/linux/mediatek/filogic/target.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/target/linux/mediatek/filogic/target.mk b/target/linux/mediatek/filogic/target.mk
+index 08d9517cbe..932871804c 100644
+--- a/target/linux/mediatek/filogic/target.mk
++++ b/target/linux/mediatek/filogic/target.mk
+@@ -2,7 +2,7 @@ ARCH:=aarch64
+ SUBTARGET:=filogic
+ BOARDNAME:=Filogic 8x0 (MT798x)
+ CPU_TYPE:=cortex-a53
+-DEFAULT_PACKAGES += fitblk kmod-phy-aquantia kmod-crypto-hw-safexcel wpad-openssl uboot-envtools bridger
++DEFAULT_PACKAGES += fitblk kmod-phy-aquantia kmod-crypto-hw-safexcel wpad-openssl uboot-envtools mtk-smp
+ KERNELNAME:=Image dtbs
+ 
+ define Target/Description
+-- 
+2.50.1 (Apple Git-155)
+

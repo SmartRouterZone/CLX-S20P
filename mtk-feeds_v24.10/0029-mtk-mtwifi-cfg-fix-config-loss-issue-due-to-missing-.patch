@@ -1,0 +1,33 @@
+From 685c88930eff8bf6d7f33c37fba5398f7cc4267f Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Sun, 23 Nov 2025 21:55:14 +0800
+Subject: [PATCH 29/64] mtk: mtwifi-cfg: fix config loss issue due to missing
+ config check Previously, the `detect_mtwifi` function relied solely on
+ `config_get` to check the device type. If `config_load wireless` had not been
+ called (which is the case during early boot or hotplug detection),
+ `config_get` would return an empty string, resulting in config loss issue.
+
+So, we add `config_load` explicitly to ensure wireless config exists in memory.
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ package/mtk/applications/mtwifi-cfg/files/mtwifi.sh | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/package/mtk/applications/mtwifi-cfg/files/mtwifi.sh b/package/mtk/applications/mtwifi-cfg/files/mtwifi.sh
+index 34861d0091..7709e60a70 100755
+--- a/package/mtk/applications/mtwifi-cfg/files/mtwifi.sh
++++ b/package/mtk/applications/mtwifi-cfg/files/mtwifi.sh
+@@ -8,6 +8,9 @@ append DRIVERS "mtwifi"
+ detect_mtwifi() {
+ 	local idx ifname
+ 	local band htmode htbsscoex ssid dbdc_main
++	# load wireless config explicitly
++	config_load wireless
++
+ 	if [ -d "/sys/module/mt_wifi" ]; then
+ 		dev_list="$(l1util list)"
+ 		for dev in $dev_list; do
+-- 
+2.50.1 (Apple Git-155)
+

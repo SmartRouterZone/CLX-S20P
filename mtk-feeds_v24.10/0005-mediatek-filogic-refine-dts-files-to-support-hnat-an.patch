@@ -1,0 +1,484 @@
+From 488bfba4be030736a6a10a8238509780d28c8839 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Sun, 26 Oct 2025 20:03:26 +0800
+Subject: [PATCH 05/64] mediatek: filogic: refine dts files to support hnat and
+ mtwifi - for mt7981, since it hasnt been included in upstream yet, we do
+ modification to it directly - for mt7986, we add patches to do the same work
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../arch/arm64/boot/dts/mediatek/mt7981.dtsi  |  88 +++++---
+ ...hnat-add-mtkhnat-support-for-mt7986a.patch |  23 ++
+ ...t7986a-ethsys-from-mtk-openwrt-feeds.patch |  39 ++++
+ ...4-mtk-add-mtwifi-support-for-mt7986a.patch | 210 ++++++++++++++++++
+ 4 files changed, 328 insertions(+), 32 deletions(-)
+ create mode 100644 target/linux/mediatek/patches-6.6/999-2799-2-mtkhnat-add-mtkhnat-support-for-mt7986a.patch
+ create mode 100644 target/linux/mediatek/patches-6.6/999-2799-3-mtk-sync-mt7986a-ethsys-from-mtk-openwrt-feeds.patch
+ create mode 100644 target/linux/mediatek/patches-6.6/999-2799-4-mtk-add-mtwifi-support-for-mt7986a.patch
+
+diff --git a/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi b/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi
+index 012c6e4e5b..24c842505c 100644
+--- a/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi
++++ b/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7981.dtsi
+@@ -15,6 +15,7 @@
+ #include <dt-bindings/input/linux-event-codes.h>
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/mux/mux.h>
++#include <dt-bindings/reset/ti-syscon.h>
+ 
+ / {
+ 	compatible = "mediatek,mt7981";
+@@ -95,18 +96,23 @@
+ 		};
+ 
+ 		wmcpu_emi: wmcpu-reserved@47c80000 {
++			compatible = "mediatek,wmcpu-reserved";
+ 			reg = <0 0x47c80000 0 0x100000>;
+ 			no-map;
+ 		};
+ 
+ 		wo_emi0: wo-emi@47d80000 {
++			compatible = "mediatek,wocpu0_emi";
+ 			reg = <0 0x47d80000 0 0x40000>;
+ 			no-map;
++			shared = <0>;
+ 		};
+ 
+ 		wo_data: wo-data@47dc0000 {
++			compatible = "mediatek,wocpu_data";
+ 			reg = <0 0x47dc0000 0 0x240000>;
+ 			no-map;
++			shared = <1>;
+ 		};
+ 	};
+ 
+@@ -176,6 +182,18 @@
+ 			#pwm-cells = <2>;
+ 		};
+ 
++		hnat: hnat@15000000 {
++			compatible = "mediatek,mtk-hnat_v4";
++			reg = <0 0x15100000 0 0x80000>;
++			resets = <&ethsys 0>;
++			reset-names = "mtketh";
++			status = "okay";
++			mtketh-wan = "eth1";
++			mtketh-lan = "eth0";
++			mtketh-max-gmac = <2>;
++			mtketh-ppe-num = <2>;
++		};
++
+ 		sgmiisys0: syscon@10060000 {
+ 			compatible = "mediatek,mt7981-sgmiisys_0", "syscon";
+ 			reg = <0 0x10060000 0 0x1000>;
+@@ -577,38 +595,45 @@
+ 			};
+ 		};
+ 
+-		ethsys: clock-controller@15000000 {
++		ethsys: syscon@15000000 {
++			#address-cells = <1>;
++			#size-cells = <1>;
+ 			compatible = "mediatek,mt7981-ethsys",
+-				     "syscon";
++							"syscon";
+ 			reg = <0 0x15000000 0 0x1000>;
+ 			#clock-cells = <1>;
+ 			#reset-cells = <1>;
+-			#address-cells = <1>;
+-			#size-cells = <1>;
+-		};
++
++			ethsysrst: reset-controller {
++				compatible = "ti,syscon-reset";
++				#reset-cells = <1>;
++				ti,reset-bits = <0x34 4 0x34 4 0x34 4 (ASSERT_SET | DEASSERT_CLEAR | STATUS_SET)>;
++			};
++        };
+ 
+ 		wed: wed@15010000 {
+-			compatible = "mediatek,mt7981-wed",
+-				     "mediatek,mt7986-wed",
+-				     "syscon";
+-			reg = <0 0x15010000 0 0x1000>;
++			compatible = "mediatek,wed";
++			wed_num = <2>;
++			/* add this property for wed get the pci slot number. */
++			pci_slot_map = <0>, <1>;
++			reg = <0 0x15010000 0 0x1000>,
++				<0 0x15011000 0 0x1000>;
+ 			interrupt-parent = <&gic>;
+-			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL_HIGH>;
+-			memory-region = <&wo_emi0>, <&wo_data>;
+-			memory-region-names = "wo-emi", "wo-data";
+-			mediatek,wo-ccif = <&wo_ccif0>;
+-			mediatek,wo-ilm = <&wo_ilm0>;
+-			mediatek,wo-dlm = <&wo_dlm0>;
+-			mediatek,wo-cpuboot = <&wo_cpuboot>;
++			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 206 IRQ_TYPE_LEVEL_HIGH>;
+ 		};
+ 
+ 		eth: ethernet@15100000 {
+ 			compatible = "mediatek,mt7981-eth";
+ 			reg = <0 0x15100000 0 0x80000>;
+-			interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL_HIGH>,
+-					<GIC_SPI 197 IRQ_TYPE_LEVEL_HIGH>,
+-					<GIC_SPI 198 IRQ_TYPE_LEVEL_HIGH>,
+-					<GIC_SPI 199 IRQ_TYPE_LEVEL_HIGH>;
++			interrupts = <GIC_SPI 189 IRQ_TYPE_LEVEL_HIGH>,
++			    <GIC_SPI 190 IRQ_TYPE_LEVEL_HIGH>,
++			    <GIC_SPI 191 IRQ_TYPE_LEVEL_HIGH>,
++			    <GIC_SPI 192 IRQ_TYPE_LEVEL_HIGH>,
++			    <GIC_SPI 196 IRQ_TYPE_LEVEL_HIGH>,
++			    <GIC_SPI 197 IRQ_TYPE_LEVEL_HIGH>,
++			    <GIC_SPI 198 IRQ_TYPE_LEVEL_HIGH>,
++			    <GIC_SPI 199 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&ethsys CLK_ETH_FE_EN>,
+ 				<&ethsys CLK_ETH_GP2_EN>,
+ 				<&ethsys CLK_ETH_GP1_EN>,
+@@ -682,7 +707,8 @@
+ 		};
+ 
+ 		wo_cpuboot: syscon@15194000 {
+-			compatible = "mediatek,mt7986-wo-cpuboot", "syscon";
++			compatible = "mediatek,wocpu_boot",
++						 "mediatek,mt7986-wo-cpuboot", "syscon";
+ 			reg = <0 0x15194000 0 0x1000>;
+ 		};
+ 
+@@ -695,25 +721,22 @@
+ 				     <GIC_SPI 212 IRQ_TYPE_LEVEL_HIGH>;
+ 		};
+ 
+-		wo_ccif0: syscon@151a5000 {
+-			compatible = "mediatek,mt7986-wo-ccif", "syscon";
+-			reg = <0 0x151a5000 0 0x1000>;
+-			interrupt-parent = <&gic>;
+-			interrupts = <GIC_SPI 211 IRQ_TYPE_LEVEL_HIGH>;
+-		};
+-
+ 		wo_ilm0: syscon@151e0000 {
+-			compatible = "mediatek,mt7986-wo-ilm", "syscon";
++			compatible = "mediatek,wocpu0_ilm",
++						 "mediatek,mt7986-wo-ilm", "syscon";
+ 			reg = <0 0x151e0000 0 0x8000>;
+ 		};
+ 
+ 		wo_dlm0: syscon@151e8000 {
+-			compatible = "mediatek,mt7986-wo-dlm", "syscon";
+-			reg = <0 0x151e8000 0 0x2000>;
++			compatible = "mediatek,wocpu_dlm",
++						 "mediatek,mt7986-wo-dlm", "syscon";
++			reg = <0 0x151e8000 0 0x2000>,
++				  <0 0x151f8000 0 0x2000>;
+ 		};
+ 
+ 		wifi: wifi@18000000 {
+-			compatible = "mediatek,mt7981-wmac";
++			compatible = "mediatek,wbsys",
++						 "mediatek,mt7981-wmac";
+ 			reg = <0 0x18000000 0 0x1000000>,
+ 			      <0 0x10003000 0 0x1000>,
+ 			      <0 0x11d10000 0 0x1000>;
+@@ -728,6 +751,7 @@
+ 				     <GIC_SPI 214 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 215 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 216 IRQ_TYPE_LEVEL_HIGH>;
++			chip_id = <0x7981>;
+ 			memory-region = <&wmcpu_emi>;
+ 			status = "disabled";
+ 		};
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-2-mtkhnat-add-mtkhnat-support-for-mt7986a.patch b/target/linux/mediatek/patches-6.6/999-2799-2-mtkhnat-add-mtkhnat-support-for-mt7986a.patch
+new file mode 100644
+index 0000000000..aae098071f
+--- /dev/null
++++ b/target/linux/mediatek/patches-6.6/999-2799-2-mtkhnat-add-mtkhnat-support-for-mt7986a.patch
+@@ -0,0 +1,23 @@
++diff --git a/arch/arm64/boot/dts/mediatek/mt7986a.dtsi b/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
++index bb3feca0f..299503d7a 100644
++--- a/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
+++++ b/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
++@@ -211,6 +211,18 @@ pwm: pwm@10048000 {
++ 			status = "disabled";
++ 		};
++ 
+++		hnat: hnat@15000000 {
+++			compatible = "mediatek,mtk-hnat_v4";
+++			reg = <0 0x15100000 0 0x80000>;
+++			resets = <&ethsys 0>;
+++			reset-names = "mtketh";
+++			status = "okay";
+++			mtketh-wan = "eth1";
+++			mtketh-lan = "eth0";
+++			mtketh-max-gmac = <2>;
+++			mtketh-ppe-num = <2>;
+++		};
+++
++ 		sgmiisys0: syscon@10060000 {
++ 			compatible = "mediatek,mt7986-sgmiisys_0",
++ 				     "syscon";
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-3-mtk-sync-mt7986a-ethsys-from-mtk-openwrt-feeds.patch b/target/linux/mediatek/patches-6.6/999-2799-3-mtk-sync-mt7986a-ethsys-from-mtk-openwrt-feeds.patch
+new file mode 100644
+index 0000000000..bcd7830a0c
+--- /dev/null
++++ b/target/linux/mediatek/patches-6.6/999-2799-3-mtk-sync-mt7986a-ethsys-from-mtk-openwrt-feeds.patch
+@@ -0,0 +1,39 @@
++diff --git a/arch/arm64/boot/dts/mediatek/mt7986a.dtsi b/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
++index 299503d7a..7aa42ce3d 100644
++--- a/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
+++++ b/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
++@@ -9,6 +9,7 @@
++ #include <dt-bindings/clock/mt7986-clk.h>
++ #include <dt-bindings/reset/mt7986-resets.h>
++ #include <dt-bindings/phy/phy.h>
+++#include <dt-bindings/reset/ti-syscon.h>
++ 
++ / {
++ 	compatible = "mediatek,mt7986a";
++@@ -504,12 +505,20 @@ u2port1: usb-phy@1000 {
++ 		};
++ 
++ 		ethsys: syscon@15000000 {
++-			 compatible = "mediatek,mt7986-ethsys",
++-				      "syscon";
++-			 reg = <0 0x15000000 0 0x1000>;
++-			 #clock-cells = <1>;
++-			 #reset-cells = <1>;
++-		};
+++			#address-cells = <1>;
+++			#size-cells = <1>;
+++			compatible = "mediatek,mt7986-ethsys",
+++							"syscon";
+++			reg = <0 0x15000000 0 0x1000>;
+++			#clock-cells = <1>;
+++			#reset-cells = <1>;
+++
+++			ethsysrst: reset-controller {
+++				compatible = "ti,syscon-reset";
+++				#reset-cells = <1>;
+++				ti,reset-bits = <0x34 4 0x34 4 0x34 4 (ASSERT_SET | DEASSERT_CLEAR | STATUS_SET)>;
+++			};
+++        };
++ 
++ 		wed0: wed@15010000 {
++ 			compatible = "mediatek,mt7986-wed",
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-4-mtk-add-mtwifi-support-for-mt7986a.patch b/target/linux/mediatek/patches-6.6/999-2799-4-mtk-add-mtwifi-support-for-mt7986a.patch
+new file mode 100644
+index 0000000000..348c93d2f2
+--- /dev/null
++++ b/target/linux/mediatek/patches-6.6/999-2799-4-mtk-add-mtwifi-support-for-mt7986a.patch
+@@ -0,0 +1,210 @@
++diff --git a/arch/arm64/boot/dts/mediatek/mt7986a.dtsi b/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
++index 7aa42ce3d..5025a69e9 100644
++--- a/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
+++++ b/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
++@@ -84,23 +84,30 @@ secmon_reserved: secmon@43000000 {
++ 		};
++ 
++ 		wmcpu_emi: wmcpu-reserved@4fc00000 {
+++			compatible = "mediatek,wmcpu-reserved";
++ 			no-map;
++ 			reg = <0 0x4fc00000 0 0x00100000>;
++ 		};
++ 
++ 		wo_emi0: wo-emi@4fd00000 {
+++			compatible = "mediatek,wocpu0_emi";
++ 			reg = <0 0x4fd00000 0 0x40000>;
++ 			no-map;
+++			shared = <0>;
++ 		};
++ 
++ 		wo_emi1: wo-emi@4fd40000 {
+++			compatible = "mediatek,wocpu1_emi";
++ 			reg = <0 0x4fd40000 0 0x40000>;
++ 			no-map;
+++			shared = <0>;
++ 		};
++ 
++ 		wo_data: wo-data@4fd80000 {
+++			compatible = "mediatek,wocpu_data";
++ 			reg = <0 0x4fd80000 0 0x240000>;
++ 			no-map;
+++			shared = <1>;
++ 		};
++ 	};
++ 
++@@ -123,6 +130,12 @@ gic: interrupt-controller@c000000 {
++ 			#interrupt-cells = <3>;
++ 		};
++ 
+++		consys: consys@10000000 {
+++			compatible = "mediatek,mt7986-consys";
+++			reg = <0 0x10000000 0 0x8600000>;
+++			memory-region = <&wmcpu_emi>;
+++		};
+++
++ 		infracfg: infracfg@10001000 {
++ 			compatible = "mediatek,mt7986-infracfg", "syscon";
++ 			reg = <0 0x10001000 0 0x1000>;
++@@ -131,7 +144,8 @@ infracfg: infracfg@10001000 {
++ 		};
++ 
++ 		wed_pcie: wed-pcie@10003000 {
++-			compatible = "mediatek,mt7986-wed-pcie",
+++			compatible = "mediatek,wed_pcie",
+++						 "mediatek,mt7986-wed-pcie",
++ 				     "syscon";
++ 			reg = <0 0x10003000 0 0x10>;
++ 		};
++@@ -520,41 +534,39 @@ ethsysrst: reset-controller {
++ 			};
++         };
++ 
++-		wed0: wed@15010000 {
++-			compatible = "mediatek,mt7986-wed",
++-				     "syscon";
++-			reg = <0 0x15010000 0 0x1000>;
+++		wed: wed@15010000 {
+++			compatible = "mediatek,wed";
+++			wed_num = <2>;
+++			/* add this property for wed get the pci slot number. */
+++			pci_slot_map = <0>, <1>;
+++			reg = <0 0x15010000 0 0x1000>,
+++				<0 0x15011000 0 0x1000>;
++ 			interrupt-parent = <&gic>;
++-			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL_HIGH>;
++-			memory-region = <&wo_emi0>, <&wo_data>;
++-			memory-region-names = "wo-emi", "wo-data";
++-			mediatek,wo-ccif = <&wo_ccif0>;
++-			mediatek,wo-ilm = <&wo_ilm0>;
++-			mediatek,wo-dlm = <&wo_dlm0>;
++-			mediatek,wo-cpuboot = <&wo_cpuboot>;
+++			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL_HIGH>,
+++					<GIC_SPI 206 IRQ_TYPE_LEVEL_HIGH>;
++ 		};
++ 
++-		wed1: wed@15011000 {
++-			compatible = "mediatek,mt7986-wed",
++-				     "syscon";
++-			reg = <0 0x15011000 0 0x1000>;
+++		wed2: wed2@15011000 {
+++			compatible = "mediatek,wed2";
+++			wed_num = <2>;
+++			reg = <0 0x15010000 0 0x1000>,
+++				<0 0x15011000 0 0x1000>;
++ 			interrupt-parent = <&gic>;
++-			interrupts = <GIC_SPI 206 IRQ_TYPE_LEVEL_HIGH>;
++-			memory-region = <&wo_emi1>, <&wo_data>;
++-			memory-region-names = "wo-emi", "wo-data";
++-			mediatek,wo-ccif = <&wo_ccif1>;
++-			mediatek,wo-ilm = <&wo_ilm1>;
++-			mediatek,wo-dlm = <&wo_dlm1>;
++-			mediatek,wo-cpuboot = <&wo_cpuboot>;
+++			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL_HIGH>,
+++					<GIC_SPI 206 IRQ_TYPE_LEVEL_HIGH>;
++ 		};
++ 
++ 		eth: ethernet@15100000 {
++ 			compatible = "mediatek,mt7986-eth";
++ 			reg = <0 0x15100000 0 0x80000>;
++-			interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL_HIGH>,
++-				     <GIC_SPI 197 IRQ_TYPE_LEVEL_HIGH>,
++-				     <GIC_SPI 198 IRQ_TYPE_LEVEL_HIGH>,
++-				     <GIC_SPI 199 IRQ_TYPE_LEVEL_HIGH>;
+++			interrupts = <GIC_SPI 189 IRQ_TYPE_LEVEL_HIGH>,
+++					<GIC_SPI 190 IRQ_TYPE_LEVEL_HIGH>,
+++					<GIC_SPI 191 IRQ_TYPE_LEVEL_HIGH>,
+++					<GIC_SPI 192 IRQ_TYPE_LEVEL_HIGH>,
+++					<GIC_SPI 196 IRQ_TYPE_LEVEL_HIGH>,
+++					<GIC_SPI 197 IRQ_TYPE_LEVEL_HIGH>,
+++					<GIC_SPI 198 IRQ_TYPE_LEVEL_HIGH>,
+++					<GIC_SPI 199 IRQ_TYPE_LEVEL_HIGH>;
++ 			clocks = <&ethsys CLK_ETH_FE_EN>,
++ 				 <&ethsys CLK_ETH_GP2_EN>,
++ 				 <&ethsys CLK_ETH_GP1_EN>,
++@@ -585,51 +597,55 @@ eth: ethernet@15100000 {
++ 			mediatek,ethsys = <&ethsys>;
++ 			mediatek,sgmiisys = <&sgmiisys0>, <&sgmiisys1>;
++ 			mediatek,wed-pcie = <&wed_pcie>;
++-			mediatek,wed = <&wed0>, <&wed1>;
+++			mediatek,wed = <&wed>, <&wed2>;
++ 			status = "disabled";
++ 		};
++ 
++-		wo_ccif0: syscon@151a5000 {
++-			compatible = "mediatek,mt7986-wo-ccif", "syscon";
++-			reg = <0 0x151a5000 0 0x1000>;
++-			interrupt-parent = <&gic>;
++-			interrupts = <GIC_SPI 211 IRQ_TYPE_LEVEL_HIGH>;
+++		wdma: wdma@15104800 {
+++			compatible = "mediatek,wed-wdma";
+++			reg = <0 0x15104800 0 0x400>,
+++				<0 0x15104c00 0 0x400>;
++ 		};
++ 
++-		wo_ccif1: syscon@151ad000 {
++-			compatible = "mediatek,mt7986-wo-ccif", "syscon";
++-			reg = <0 0x151ad000 0 0x1000>;
+++		ap2woccif: ap2woccif@151a5000 {
+++			compatible = "mediatek,ap2woccif";
+++			reg = <0 0x151a5000 0 0x1000>,
+++				<0 0x151ad000 0 0x1000>;
++ 			interrupt-parent = <&gic>;
++-			interrupts = <GIC_SPI 212 IRQ_TYPE_LEVEL_HIGH>;
++-		};
+++			interrupts = <GIC_SPI 211 IRQ_TYPE_LEVEL_HIGH>,
+++					<GIC_SPI 212 IRQ_TYPE_LEVEL_HIGH>;
+++        };
++ 
++ 		wo_ilm0: syscon@151e0000 {
++-			compatible = "mediatek,mt7986-wo-ilm", "syscon";
+++			compatible = "mediatek,wocpu0_ilm",
+++						 "mediatek,mt7986-wo-ilm", "syscon";
++ 			reg = <0 0x151e0000 0 0x8000>;
++ 		};
++ 
++ 		wo_ilm1: syscon@151f0000 {
++-			compatible = "mediatek,mt7986-wo-ilm", "syscon";
+++			compatible = "mediatek,wocpu1_ilm",
+++						 "mediatek,mt7986-wo-ilm", "syscon";
++ 			reg = <0 0x151f0000 0 0x8000>;
++ 		};
++ 
++ 		wo_dlm0: syscon@151e8000 {
++-			compatible = "mediatek,mt7986-wo-dlm", "syscon";
++-			reg = <0 0x151e8000 0 0x2000>;
++-		};
++-
++-		wo_dlm1: syscon@151f8000 {
++-			compatible = "mediatek,mt7986-wo-dlm", "syscon";
++-			reg = <0 0x151f8000 0 0x2000>;
+++			compatible = "mediatek,wocpu_dlm",
+++						 "mediatek,mt7986-wo-dlm", "syscon";
+++			reg = <0 0x151e8000 0 0x2000>,
+++				  <0 0x151f8000 0 0x2000>;
+++			resets = <&ethsysrst 0>;
+++			reset-names = "wocpu_rst";
++ 		};
++ 
++ 		wo_cpuboot: syscon@15194000 {
++-			compatible = "mediatek,mt7986-wo-cpuboot", "syscon";
+++			compatible = "mediatek,wocpu_boot",
+++						 "mediatek,mt7986-wo-cpuboot", "syscon";
++ 			reg = <0 0x15194000 0 0x1000>;
++ 		};
++ 
++ 		wifi: wifi@18000000 {
++-			compatible = "mediatek,mt7986-wmac";
+++			compatible = "mediatek,wbsys",
+++						 "mediatek,mt7986-wmac";
++ 			reg = <0 0x18000000 0 0x1000000>,
++ 			      <0 0x10003000 0 0x1000>,
++ 			      <0 0x11d10000 0 0x1000>;
++@@ -642,6 +658,7 @@ wifi: wifi@18000000 {
++ 				     <GIC_SPI 214 IRQ_TYPE_LEVEL_HIGH>,
++ 				     <GIC_SPI 215 IRQ_TYPE_LEVEL_HIGH>,
++ 				     <GIC_SPI 216 IRQ_TYPE_LEVEL_HIGH>;
+++			chip_id = <0x7986>;
++ 			memory-region = <&wmcpu_emi>;
++ 		};
++ 	};
+-- 
+2.50.1 (Apple Git-155)
+

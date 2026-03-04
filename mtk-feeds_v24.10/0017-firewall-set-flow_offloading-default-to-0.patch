@@ -1,0 +1,42 @@
+From 1b17218e5d4750625fd02fc263de7d8e0ee14a41 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Wed, 12 Nov 2025 00:11:09 +0800
+Subject: [PATCH 17/64] firewall: set flow_offloading default to `0`
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ package/network/config/firewall/files/firewall.config         | 2 +-
+ .../patches/001-firewall4-add-support-for-fullcone-nat.patch  | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/package/network/config/firewall/files/firewall.config b/package/network/config/firewall/files/firewall.config
+index 231ee7116d..b694b8cb30 100644
+--- a/package/network/config/firewall/files/firewall.config
++++ b/package/network/config/firewall/files/firewall.config
+@@ -3,7 +3,7 @@ config defaults
+ 	option input		REJECT
+ 	option output		ACCEPT
+ 	option forward		REJECT
+-	option flow_offloading	1
++	option flow_offloading	0
+ 	option fullcone		1
+ # Uncomment this line to disable ipv6 rules
+ #	option disable_ipv6	1
+diff --git a/package/network/config/firewall4/patches/001-firewall4-add-support-for-fullcone-nat.patch b/package/network/config/firewall4/patches/001-firewall4-add-support-for-fullcone-nat.patch
+index 9f34b1eefd..8602b15f78 100644
+--- a/package/network/config/firewall4/patches/001-firewall4-add-support-for-fullcone-nat.patch
++++ b/package/network/config/firewall4/patches/001-firewall4-add-support-for-fullcone-nat.patch
+@@ -26,8 +26,8 @@ Renew: ZiMing Mo <msylgj@immortalwrt.org>
+  	option forward		REJECT
+  # Uncomment this line to disable ipv6 rules
+  #	option disable_ipv6	1
+-+	option flow_offloading	1
+-+	option flow_offloading_hw	1
+++	option flow_offloading	0
+++	option flow_offloading_hw	0
+ +	option fullcone		1
+ +	option fullcone6	0
+  
+-- 
+2.50.1 (Apple Git-155)
+

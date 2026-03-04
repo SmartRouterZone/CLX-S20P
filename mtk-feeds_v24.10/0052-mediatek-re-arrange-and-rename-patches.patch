@@ -1,0 +1,80 @@
+From 21fe3e97723a0034b101f024ef4fbbe2449f1e56 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Fri, 28 Nov 2025 21:49:05 +0800
+Subject: [PATCH 52/64] mediatek: re-arrange and rename patches - since using
+ `2799-*` may encouter naming overlapping with upstream patches, we use patch
+ order starts with `999-5***`
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ ...> 999-5000-dts-mtk-hnat-add-mtkhnat-support-for-mt7986a.patch} | 0
+ ...5001-dts-mtk-sync-mt7986a-ethsys-from-mtk-openwrt-feeds.patch} | 0
+ ...atch => 999-5002-dts-mtk-add-mtwifi-support-for-mt7986a.patch} | 0
+ ...100-mtk-hnat-fix-foe-entry-struct-mismatch-on-NETSYS_V2.patch} | 0
+ ...t-ethernet-mtk_eth_soc-mtkhnat-add-hnat-skb-magic-check.patch} | 0
+ ...-to-16k.patch => 999-5102-mtk-hnat-set-ppe-entry-to-16k.patch} | 0
+ ...5103-mtk-hnat-debugfs-change-hook-toggle-read-to-stdout.patch} | 0
+ ...4-mtk-hnat-debugfs-only-set-BIND_RATE-instead-of-writel.patch} | 0
+ ...105-mtk-hnat-debugfs-hnat_stats-to-show-brief-ppe-stats.patch} | 0
+ ...tility-rbus.patch => 999-5200-mtk-add-wifi-utility-rbus.patch} | 0
+ ...s-rate-fix.patch => 999-5201-iwconfig-wireless-rate-fix.patch} | 0
+ 11 files changed, 0 insertions(+), 0 deletions(-)
+ rename target/linux/mediatek/patches-6.6/{999-2799-2-mtkhnat-add-mtkhnat-support-for-mt7986a.patch => 999-5000-dts-mtk-hnat-add-mtkhnat-support-for-mt7986a.patch} (100%)
+ rename target/linux/mediatek/patches-6.6/{999-2799-3-mtk-sync-mt7986a-ethsys-from-mtk-openwrt-feeds.patch => 999-5001-dts-mtk-sync-mt7986a-ethsys-from-mtk-openwrt-feeds.patch} (100%)
+ rename target/linux/mediatek/patches-6.6/{999-2799-4-mtk-add-mtwifi-support-for-mt7986a.patch => 999-5002-dts-mtk-add-mtwifi-support-for-mt7986a.patch} (100%)
+ rename target/linux/mediatek/patches-6.6/{999-2799-5-mtk-hnat-fix-foe-entry-struct-mismatch-on-NETSYS_V2.patch => 999-5100-mtk-hnat-fix-foe-entry-struct-mismatch-on-NETSYS_V2.patch} (100%)
+ rename target/linux/mediatek/patches-6.6/{999-2799-6-net-ethernet-mtk_eth_soc-mtkhnat-add-hnat-skb-magic-check.patch => 999-5101-net-ethernet-mtk_eth_soc-mtkhnat-add-hnat-skb-magic-check.patch} (100%)
+ rename target/linux/mediatek/patches-6.6/{999-2799-8-mtk-hnat-set-ppe-entry-to-16k.patch => 999-5102-mtk-hnat-set-ppe-entry-to-16k.patch} (100%)
+ rename target/linux/mediatek/patches-6.6/{999-2799-9-mtk-hnat-debugfs-change-hook-toggle-read-to-stdout.patch => 999-5103-mtk-hnat-debugfs-change-hook-toggle-read-to-stdout.patch} (100%)
+ rename target/linux/mediatek/patches-6.6/{999-2799-10-mtk-hnat-debugfs-only-set-BIND_RATE-instead-of-writel.patch => 999-5104-mtk-hnat-debugfs-only-set-BIND_RATE-instead-of-writel.patch} (100%)
+ rename target/linux/mediatek/patches-6.6/{999-2799-11-mtk-hnat-debugfs-hnat_stats-to-show-brief-ppe-stats.patch => 999-5105-mtk-hnat-debugfs-hnat_stats-to-show-brief-ppe-stats.patch} (100%)
+ rename target/linux/mediatek/patches-6.6/{999-2799-1-mtk-add-wifi-utility-rbus.patch => 999-5200-mtk-add-wifi-utility-rbus.patch} (100%)
+ rename target/linux/mediatek/patches-6.6/{999-2799-7-iwconfig-wireless-rate-fix.patch => 999-5201-iwconfig-wireless-rate-fix.patch} (100%)
+
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-2-mtkhnat-add-mtkhnat-support-for-mt7986a.patch b/target/linux/mediatek/patches-6.6/999-5000-dts-mtk-hnat-add-mtkhnat-support-for-mt7986a.patch
+similarity index 100%
+rename from target/linux/mediatek/patches-6.6/999-2799-2-mtkhnat-add-mtkhnat-support-for-mt7986a.patch
+rename to target/linux/mediatek/patches-6.6/999-5000-dts-mtk-hnat-add-mtkhnat-support-for-mt7986a.patch
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-3-mtk-sync-mt7986a-ethsys-from-mtk-openwrt-feeds.patch b/target/linux/mediatek/patches-6.6/999-5001-dts-mtk-sync-mt7986a-ethsys-from-mtk-openwrt-feeds.patch
+similarity index 100%
+rename from target/linux/mediatek/patches-6.6/999-2799-3-mtk-sync-mt7986a-ethsys-from-mtk-openwrt-feeds.patch
+rename to target/linux/mediatek/patches-6.6/999-5001-dts-mtk-sync-mt7986a-ethsys-from-mtk-openwrt-feeds.patch
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-4-mtk-add-mtwifi-support-for-mt7986a.patch b/target/linux/mediatek/patches-6.6/999-5002-dts-mtk-add-mtwifi-support-for-mt7986a.patch
+similarity index 100%
+rename from target/linux/mediatek/patches-6.6/999-2799-4-mtk-add-mtwifi-support-for-mt7986a.patch
+rename to target/linux/mediatek/patches-6.6/999-5002-dts-mtk-add-mtwifi-support-for-mt7986a.patch
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-5-mtk-hnat-fix-foe-entry-struct-mismatch-on-NETSYS_V2.patch b/target/linux/mediatek/patches-6.6/999-5100-mtk-hnat-fix-foe-entry-struct-mismatch-on-NETSYS_V2.patch
+similarity index 100%
+rename from target/linux/mediatek/patches-6.6/999-2799-5-mtk-hnat-fix-foe-entry-struct-mismatch-on-NETSYS_V2.patch
+rename to target/linux/mediatek/patches-6.6/999-5100-mtk-hnat-fix-foe-entry-struct-mismatch-on-NETSYS_V2.patch
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-6-net-ethernet-mtk_eth_soc-mtkhnat-add-hnat-skb-magic-check.patch b/target/linux/mediatek/patches-6.6/999-5101-net-ethernet-mtk_eth_soc-mtkhnat-add-hnat-skb-magic-check.patch
+similarity index 100%
+rename from target/linux/mediatek/patches-6.6/999-2799-6-net-ethernet-mtk_eth_soc-mtkhnat-add-hnat-skb-magic-check.patch
+rename to target/linux/mediatek/patches-6.6/999-5101-net-ethernet-mtk_eth_soc-mtkhnat-add-hnat-skb-magic-check.patch
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-8-mtk-hnat-set-ppe-entry-to-16k.patch b/target/linux/mediatek/patches-6.6/999-5102-mtk-hnat-set-ppe-entry-to-16k.patch
+similarity index 100%
+rename from target/linux/mediatek/patches-6.6/999-2799-8-mtk-hnat-set-ppe-entry-to-16k.patch
+rename to target/linux/mediatek/patches-6.6/999-5102-mtk-hnat-set-ppe-entry-to-16k.patch
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-9-mtk-hnat-debugfs-change-hook-toggle-read-to-stdout.patch b/target/linux/mediatek/patches-6.6/999-5103-mtk-hnat-debugfs-change-hook-toggle-read-to-stdout.patch
+similarity index 100%
+rename from target/linux/mediatek/patches-6.6/999-2799-9-mtk-hnat-debugfs-change-hook-toggle-read-to-stdout.patch
+rename to target/linux/mediatek/patches-6.6/999-5103-mtk-hnat-debugfs-change-hook-toggle-read-to-stdout.patch
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-10-mtk-hnat-debugfs-only-set-BIND_RATE-instead-of-writel.patch b/target/linux/mediatek/patches-6.6/999-5104-mtk-hnat-debugfs-only-set-BIND_RATE-instead-of-writel.patch
+similarity index 100%
+rename from target/linux/mediatek/patches-6.6/999-2799-10-mtk-hnat-debugfs-only-set-BIND_RATE-instead-of-writel.patch
+rename to target/linux/mediatek/patches-6.6/999-5104-mtk-hnat-debugfs-only-set-BIND_RATE-instead-of-writel.patch
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-11-mtk-hnat-debugfs-hnat_stats-to-show-brief-ppe-stats.patch b/target/linux/mediatek/patches-6.6/999-5105-mtk-hnat-debugfs-hnat_stats-to-show-brief-ppe-stats.patch
+similarity index 100%
+rename from target/linux/mediatek/patches-6.6/999-2799-11-mtk-hnat-debugfs-hnat_stats-to-show-brief-ppe-stats.patch
+rename to target/linux/mediatek/patches-6.6/999-5105-mtk-hnat-debugfs-hnat_stats-to-show-brief-ppe-stats.patch
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-1-mtk-add-wifi-utility-rbus.patch b/target/linux/mediatek/patches-6.6/999-5200-mtk-add-wifi-utility-rbus.patch
+similarity index 100%
+rename from target/linux/mediatek/patches-6.6/999-2799-1-mtk-add-wifi-utility-rbus.patch
+rename to target/linux/mediatek/patches-6.6/999-5200-mtk-add-wifi-utility-rbus.patch
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-7-iwconfig-wireless-rate-fix.patch b/target/linux/mediatek/patches-6.6/999-5201-iwconfig-wireless-rate-fix.patch
+similarity index 100%
+rename from target/linux/mediatek/patches-6.6/999-2799-7-iwconfig-wireless-rate-fix.patch
+rename to target/linux/mediatek/patches-6.6/999-5201-iwconfig-wireless-rate-fix.patch
+-- 
+2.50.1 (Apple Git-155)
+

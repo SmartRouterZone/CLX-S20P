@@ -1,0 +1,24 @@
+From ba0285132c2f4ba83a4376d209625bcc8c31b2eb Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Wed, 12 Nov 2025 00:12:14 +0800
+Subject: [PATCH 20/64] kernel: refine nf_conntrack settings
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ package/kernel/linux/files/sysctl-nf-conntrack.conf | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/package/kernel/linux/files/sysctl-nf-conntrack.conf b/package/kernel/linux/files/sysctl-nf-conntrack.conf
+index 4dbf6cb572..6d11a28d0e 100644
+--- a/package/kernel/linux/files/sysctl-nf-conntrack.conf
++++ b/package/kernel/linux/files/sysctl-nf-conntrack.conf
+@@ -7,3 +7,6 @@ net.netfilter.nf_conntrack_tcp_timeout_established=7440
+ net.netfilter.nf_conntrack_udp_timeout=60
+ net.netfilter.nf_conntrack_udp_timeout_stream=180
+ net.netfilter.nf_conntrack_helper=1
++net.netfilter.nf_conntrack_buckets=65536
++net.netfilter.nf_conntrack_expect_max=16384
++net.netfilter.nf_conntrack_max=65536
+-- 
+2.50.1 (Apple Git-155)
+

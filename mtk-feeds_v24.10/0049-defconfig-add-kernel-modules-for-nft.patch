@@ -1,0 +1,103 @@
+From 4efdff458bf9c565dd40bf10ea0fbc5007d67d9a Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Thu, 27 Nov 2025 16:43:44 +0800
+Subject: [PATCH 49/64] defconfig: add kernel modules for nft - since some
+ kernel modules are commonly used, we add them to templates
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ defconfig/mt7981-ax3000.config      | 3 +++
+ defconfig/mt7986-ax4200.config      | 3 +++
+ defconfig/mt7986-ax6000-256m.config | 3 +++
+ defconfig/mt7986-ax6000.config      | 3 +++
+ defconfig/mt7986-ax7800.config      | 3 +++
+ defconfig/mt7986-ax8400.config      | 3 +++
+ 6 files changed, 18 insertions(+)
+
+diff --git a/defconfig/mt7981-ax3000.config b/defconfig/mt7981-ax3000.config
+index cc828574d3..a50065a86c 100644
+--- a/defconfig/mt7981-ax3000.config
++++ b/defconfig/mt7981-ax3000.config
+@@ -321,6 +321,9 @@ CONFIG_PACKAGE_kmod-lib-lzo=y
+ CONFIG_PACKAGE_kmod-mediatek_hnat=y
+ CONFIG_PACKAGE_kmod-mt_wifi=y
+ CONFIG_PACKAGE_kmod-nf-flow=y
++CONFIG_PACKAGE_kmod-nft-compat=y
++CONFIG_PACKAGE_kmod-nft-socket=y
++CONFIG_PACKAGE_kmod-nft-tproxy=y
+ CONFIG_PACKAGE_kmod-nls-base=y
+ CONFIG_PACKAGE_kmod-nls-cp437=y
+ CONFIG_PACKAGE_kmod-nls-iso8859-1=y
+diff --git a/defconfig/mt7986-ax4200.config b/defconfig/mt7986-ax4200.config
+index 69ae4fed1d..9dbebe601f 100644
+--- a/defconfig/mt7986-ax4200.config
++++ b/defconfig/mt7986-ax4200.config
+@@ -204,6 +204,9 @@ CONFIG_PACKAGE_kmod-lib-lzo=y
+ CONFIG_PACKAGE_kmod-mediatek_hnat=y
+ CONFIG_PACKAGE_kmod-mt_wifi=y
+ CONFIG_PACKAGE_kmod-nf-flow=y
++CONFIG_PACKAGE_kmod-nft-compat=y
++CONFIG_PACKAGE_kmod-nft-socket=y
++CONFIG_PACKAGE_kmod-nft-tproxy=y
+ CONFIG_PACKAGE_kmod-nls-base=y
+ CONFIG_PACKAGE_kmod-nls-cp437=y
+ CONFIG_PACKAGE_kmod-nls-iso8859-1=y
+diff --git a/defconfig/mt7986-ax6000-256m.config b/defconfig/mt7986-ax6000-256m.config
+index 696fb842dc..860404244a 100644
+--- a/defconfig/mt7986-ax6000-256m.config
++++ b/defconfig/mt7986-ax6000-256m.config
+@@ -197,6 +197,9 @@ CONFIG_PACKAGE_kmod-lib-lzo=y
+ CONFIG_PACKAGE_kmod-mediatek_hnat=y
+ CONFIG_PACKAGE_kmod-mt_wifi=y
+ CONFIG_PACKAGE_kmod-nf-flow=y
++CONFIG_PACKAGE_kmod-nft-compat=y
++CONFIG_PACKAGE_kmod-nft-socket=y
++CONFIG_PACKAGE_kmod-nft-tproxy=y
+ CONFIG_PACKAGE_kmod-nls-base=y
+ CONFIG_PACKAGE_kmod-nls-cp437=y
+ CONFIG_PACKAGE_kmod-nls-iso8859-1=y
+diff --git a/defconfig/mt7986-ax6000.config b/defconfig/mt7986-ax6000.config
+index 03c46304cf..38f4f8ba6a 100644
+--- a/defconfig/mt7986-ax6000.config
++++ b/defconfig/mt7986-ax6000.config
+@@ -239,6 +239,9 @@ CONFIG_PACKAGE_kmod-lib-lzo=y
+ CONFIG_PACKAGE_kmod-mediatek_hnat=y
+ CONFIG_PACKAGE_kmod-mt_wifi=y
+ CONFIG_PACKAGE_kmod-nf-flow=y
++CONFIG_PACKAGE_kmod-nft-compat=y
++CONFIG_PACKAGE_kmod-nft-socket=y
++CONFIG_PACKAGE_kmod-nft-tproxy=y
+ CONFIG_PACKAGE_kmod-nls-base=y
+ CONFIG_PACKAGE_kmod-nls-cp437=y
+ CONFIG_PACKAGE_kmod-nls-iso8859-1=y
+diff --git a/defconfig/mt7986-ax7800.config b/defconfig/mt7986-ax7800.config
+index 9b95c987c7..a1b9301b35 100644
+--- a/defconfig/mt7986-ax7800.config
++++ b/defconfig/mt7986-ax7800.config
+@@ -209,6 +209,9 @@ CONFIG_PACKAGE_kmod-lib-lzo=y
+ CONFIG_PACKAGE_kmod-mediatek_hnat=y
+ CONFIG_PACKAGE_kmod-mt_wifi=y
+ CONFIG_PACKAGE_kmod-nf-flow=y
++CONFIG_PACKAGE_kmod-nft-compat=y
++CONFIG_PACKAGE_kmod-nft-socket=y
++CONFIG_PACKAGE_kmod-nft-tproxy=y
+ CONFIG_PACKAGE_kmod-nls-base=y
+ CONFIG_PACKAGE_kmod-nls-cp437=y
+ CONFIG_PACKAGE_kmod-nls-iso8859-1=y
+diff --git a/defconfig/mt7986-ax8400.config b/defconfig/mt7986-ax8400.config
+index 31d70424b7..e62ae7f151 100644
+--- a/defconfig/mt7986-ax8400.config
++++ b/defconfig/mt7986-ax8400.config
+@@ -209,6 +209,9 @@ CONFIG_PACKAGE_kmod-lib-lzo=y
+ CONFIG_PACKAGE_kmod-mediatek_hnat=y
+ CONFIG_PACKAGE_kmod-mt_wifi=y
+ CONFIG_PACKAGE_kmod-nf-flow=y
++CONFIG_PACKAGE_kmod-nft-compat=y
++CONFIG_PACKAGE_kmod-nft-socket=y
++CONFIG_PACKAGE_kmod-nft-tproxy=y
+ CONFIG_PACKAGE_kmod-nls-base=y
+ CONFIG_PACKAGE_kmod-nls-cp437=y
+ CONFIG_PACKAGE_kmod-nls-iso8859-1=y
+-- 
+2.50.1 (Apple Git-155)
+

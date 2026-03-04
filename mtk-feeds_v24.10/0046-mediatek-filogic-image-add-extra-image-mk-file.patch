@@ -1,0 +1,33 @@
+From 0f14c1bad49e51cab053d0f7528f03a590509670 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Wed, 26 Nov 2025 23:40:22 +0800
+Subject: [PATCH 46/64] mediatek: filogic: image: add extra image mk file -
+ since there is lack of mtk uboot layout support like "immortalwrt-112m" for
+ devices, we add extra image mk file for them, isolating from mainline device
+ support
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ target/linux/mediatek/image/Makefile       | 1 +
+ target/linux/mediatek/image/filogic-ext.mk | 0
+ 2 files changed, 1 insertion(+)
+ create mode 100644 target/linux/mediatek/image/filogic-ext.mk
+
+diff --git a/target/linux/mediatek/image/Makefile b/target/linux/mediatek/image/Makefile
+index 668d9a8cb0..1566b7e5ab 100644
+--- a/target/linux/mediatek/image/Makefile
++++ b/target/linux/mediatek/image/Makefile
+@@ -39,6 +39,7 @@ define Build/asus-trx
+ endef
+ 
+ include $(SUBTARGET).mk
++include filogic-ext.mk
+ 
+ define Image/Build
+ 	$(call Image/Build/$(1),$(1))
+diff --git a/target/linux/mediatek/image/filogic-ext.mk b/target/linux/mediatek/image/filogic-ext.mk
+new file mode 100644
+index 0000000000..e69de29bb2
+-- 
+2.50.1 (Apple Git-155)
+

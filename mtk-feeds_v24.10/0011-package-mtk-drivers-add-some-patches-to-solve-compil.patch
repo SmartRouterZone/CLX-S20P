@@ -1,0 +1,1420 @@
+From eee47f1e29ce8b41dcdf630c071251732f8a021b Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Mon, 27 Oct 2025 14:53:15 +0800
+Subject: [PATCH 11/64] package: mtk: drivers: add some patches to solve
+ compiling issues - since there are kernel api changes and some deprecated
+ usages, we add patches to replace or remove them. - also, we add patches to
+ fix various warnings.
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../patches/001-fix-timeval-defination.patch  |  16 +
+ ...ass_create-incompatible-pointer-type.patch |  11 +
+ ...ioremap_nocache-implicit-declaration.patch |  20 +
+ .../004-fix-format-dont-match-warning.patch   |  11 +
+ ...-drop-deprecated-mm_segment_t-usages.patch | 324 +++++++++++++++
+ ...023-fix-printk-redefined-in-rt_linux.patch |  14 +
+ .../024-fix-stdarg_h-not-found-error.patch    |  22 +
+ ...-remove-rt_os-h-kernel-version-check.patch |  32 ++
+ ...replace-deprecated-prandom_u32-usage.patch |  13 +
+ ...ace-deprecated-ioremap_nocache-usage.patch |  11 +
+ ...-deprecated-PCI_DMA_FROMDEVICE-macro.patch |  88 ++++
+ ...replace-deprecated-pr_warning-define.patch |  14 +
+ ...ce-deprecated-pci_set_dma_mask-usage.patch |  26 ++
+ ...-unused-and-deprecated-tim-in-bn_lib.patch |  18 +
+ ...e-deprecated-compound_dtor-in-printk.patch |  13 +
+ ...3-drop-MODULE_SUPPORTED_DEVICE-macro.patch |  10 +
+ .../004-fix-stdarg_h-not-found-error.patch    |  11 +
+ ...and-macro-incompatible-in-new-kernel.patch | 383 ++++++++++++++++++
+ ...-deprecated-PCI_DMA_FROMDEVICE-macro.patch |  11 +
+ ...007-1-fix-pointer-conversion-warning.patch |  33 ++
+ ...07-2-fix-incompatible-format-warning.patch |  88 ++++
+ .../007-3-fix-unused-variable-warning.patch   |  41 ++
+ ...fy-FOE_MAGIC_WED2-to-hnat-defination.patch |  11 +
+ 23 files changed, 1221 insertions(+)
+ create mode 100644 package/mtk/drivers/conninfra/patches/001-fix-timeval-defination.patch
+ create mode 100644 package/mtk/drivers/conninfra/patches/002-fix-class_create-incompatible-pointer-type.patch
+ create mode 100644 package/mtk/drivers/conninfra/patches/003-fix-ioremap_nocache-implicit-declaration.patch
+ create mode 100644 package/mtk/drivers/conninfra/patches/004-fix-format-dont-match-warning.patch
+ create mode 100644 package/mtk/drivers/mt_wifi/patches-7672/022-drop-deprecated-mm_segment_t-usages.patch
+ create mode 100644 package/mtk/drivers/mt_wifi/patches-7672/023-fix-printk-redefined-in-rt_linux.patch
+ create mode 100644 package/mtk/drivers/mt_wifi/patches-7672/024-fix-stdarg_h-not-found-error.patch
+ create mode 100644 package/mtk/drivers/mt_wifi/patches-7672/025-remove-rt_os-h-kernel-version-check.patch
+ create mode 100644 package/mtk/drivers/mt_wifi/patches-7672/026-replace-deprecated-prandom_u32-usage.patch
+ create mode 100644 package/mtk/drivers/mt_wifi/patches-7672/027-replace-deprecated-ioremap_nocache-usage.patch
+ create mode 100644 package/mtk/drivers/mt_wifi/patches-7672/028-replace-deprecated-PCI_DMA_FROMDEVICE-macro.patch
+ create mode 100644 package/mtk/drivers/mt_wifi/patches-7672/029-replace-deprecated-pr_warning-define.patch
+ create mode 100644 package/mtk/drivers/mt_wifi/patches-7672/030-replace-deprecated-pci_set_dma_mask-usage.patch
+ create mode 100644 package/mtk/drivers/mt_wifi/patches-7672/031-remove-unused-and-deprecated-tim-in-bn_lib.patch
+ create mode 100644 package/mtk/drivers/mt_wifi/patches-7672/032-remove-deprecated-compound_dtor-in-printk.patch
+ create mode 100644 package/mtk/drivers/warp/patches/003-drop-MODULE_SUPPORTED_DEVICE-macro.patch
+ create mode 100644 package/mtk/drivers/warp/patches/004-fix-stdarg_h-not-found-error.patch
+ create mode 100644 package/mtk/drivers/warp/patches/005-fix-procfs-api-and-macro-incompatible-in-new-kernel.patch
+ create mode 100644 package/mtk/drivers/warp/patches/006-replace-deprecated-PCI_DMA_FROMDEVICE-macro.patch
+ create mode 100644 package/mtk/drivers/warp/patches/007-1-fix-pointer-conversion-warning.patch
+ create mode 100644 package/mtk/drivers/warp/patches/007-2-fix-incompatible-format-warning.patch
+ create mode 100644 package/mtk/drivers/warp/patches/007-3-fix-unused-variable-warning.patch
+ create mode 100644 package/mtk/drivers/warp/patches/008-unify-FOE_MAGIC_WED2-to-hnat-defination.patch
+
+diff --git a/package/mtk/drivers/conninfra/patches/001-fix-timeval-defination.patch b/package/mtk/drivers/conninfra/patches/001-fix-timeval-defination.patch
+new file mode 100644
+index 0000000000..6f90342f8f
+--- /dev/null
++++ b/package/mtk/drivers/conninfra/patches/001-fix-timeval-defination.patch
+@@ -0,0 +1,16 @@
++--- a/base/include/osal.h
+++++ b/base/include/osal.h
++@@ -146,6 +146,13 @@ typedef int MTK_CONN_BOOL;
++ 
++ typedef int(*P_COND) (void *);
++ 
+++typedef long __kernel_time_t;
+++
+++struct timeval {
+++	__kernel_time_t		tv_sec;		/* seconds */
+++	__kernel_suseconds_t	tv_usec;	/* microseconds */
+++};
+++
++ typedef struct _OSAL_UNSLEEPABLE_LOCK_ {
++ 	spinlock_t lock;
++ 	unsigned long flag;
+diff --git a/package/mtk/drivers/conninfra/patches/002-fix-class_create-incompatible-pointer-type.patch b/package/mtk/drivers/conninfra/patches/002-fix-class_create-incompatible-pointer-type.patch
+new file mode 100644
+index 0000000000..378d95ed76
+--- /dev/null
++++ b/package/mtk/drivers/conninfra/patches/002-fix-class_create-incompatible-pointer-type.patch
+@@ -0,0 +1,11 @@
++--- a/src/conninfra_dev.c
+++++ b/src/conninfra_dev.c
++@@ -240,7 +240,7 @@ static int conninfra_dev_init(void)
++ 		goto err1;
++ 	}
++ 
++-	pConninfraClass = class_create(THIS_MODULE, CONNINFRA_DEVICE_NAME);
+++	pConninfraClass = class_create(CONNINFRA_DEVICE_NAME);
++ 	if (IS_ERR(pConninfraClass)) {
++ 		pr_err("class create fail, error code(%ld)\n", PTR_ERR(pConninfraClass));
++ 		goto err1;
+diff --git a/package/mtk/drivers/conninfra/patches/003-fix-ioremap_nocache-implicit-declaration.patch b/package/mtk/drivers/conninfra/patches/003-fix-ioremap_nocache-implicit-declaration.patch
+new file mode 100644
+index 0000000000..e8e15c1ddd
+--- /dev/null
++++ b/package/mtk/drivers/conninfra/patches/003-fix-ioremap_nocache-implicit-declaration.patch
+@@ -0,0 +1,20 @@
++--- a/platform/consys_reg_mng.c
+++++ b/platform/consys_reg_mng.c
++@@ -107,7 +107,7 @@ int consys_reg_mng_reg_read(unsigned lon
++ {
++ 	void __iomem *vir_addr = NULL;
++ 
++-	vir_addr = ioremap_nocache(addr, 0x100);
+++	vir_addr = ioremap(addr, 0x100);
++ 	if (!vir_addr) {
++ 		pr_err("ioremap fail\n");
++ 		return -1;
++@@ -125,7 +125,7 @@ int consys_reg_mng_reg_write(unsigned lo
++ {
++ 	void __iomem *vir_addr = NULL;
++ 
++-	vir_addr = ioremap_nocache(addr, 0x100);
+++	vir_addr = ioremap(addr, 0x100);
++ 	if (!vir_addr) {
++ 		pr_err("ioremap fail\n");
++ 		return -1;
+diff --git a/package/mtk/drivers/conninfra/patches/004-fix-format-dont-match-warning.patch b/package/mtk/drivers/conninfra/patches/004-fix-format-dont-match-warning.patch
+new file mode 100644
+index 0000000000..aa18f9c1e9
+--- /dev/null
++++ b/package/mtk/drivers/conninfra/patches/004-fix-format-dont-match-warning.patch
+@@ -0,0 +1,11 @@
++--- a/platform/mt7981/mt7981_consys_reg.c
+++++ b/platform/mt7981/mt7981_consys_reg.c
++@@ -141,7 +141,7 @@ static int consys_reg_init(struct platfo
++ 			if (base_addr->vir_addr == 0)
++ 				base_addr->vir_addr = (unsigned long)ioremap(base_addr->phy_addr, base_addr->size);
++ 
++-			pr_info("Get Index(%d-%s) phy_addr(0x%zx) vir_addr=(0x%zx) size=(0x%zx)\n",
+++			pr_info("Get Index(%d-%s) phy_addr(0x%lx) vir_addr=(0x%lx) size=(0x%llx)\n",
++ 					i, consys_base_addr_index_to_str[i], base_addr->phy_addr,
++ 					base_addr->vir_addr, base_addr->size);
++ 		}
+diff --git a/package/mtk/drivers/mt_wifi/patches-7672/022-drop-deprecated-mm_segment_t-usages.patch b/package/mtk/drivers/mt_wifi/patches-7672/022-drop-deprecated-mm_segment_t-usages.patch
+new file mode 100644
+index 0000000000..336a1bc9e7
+--- /dev/null
++++ b/package/mtk/drivers/mt_wifi/patches-7672/022-drop-deprecated-mm_segment_t-usages.patch
+@@ -0,0 +1,324 @@
++--- a/mt_wifi/os/linux/rt_linux.c
+++++ b/mt_wifi/os/linux/rt_linux.c
++@@ -1055,6 +1055,9 @@ int RtmpOSFileWrite(RTMP_OS_FD osfd, cha
++ {
++ #if (KERNEL_VERSION(4, 1, 0) > LINUX_VERSION_CODE)
++ 	return osfd->f_op->write(osfd, pDataPtr, (size_t) writeLen, &osfd->f_pos);
+++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)) /* kernel >= 5.18 */
+++	/* __kernel_write is a GPL symbol, we cant use it */
+++	return kernel_write(osfd, pDataPtr, (size_t) writeLen, &osfd->f_pos);
++ #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0))
++ 	return __kernel_write(osfd, pDataPtr, (size_t) writeLen, &osfd->f_pos);
++ #elif (KERNEL_VERSION(4, 10, 0) <= LINUX_VERSION_CODE)
++@@ -1067,6 +1070,7 @@ int RtmpOSFileWrite(RTMP_OS_FD osfd, cha
++ 
++ static inline void __RtmpOSFSInfoChange(OS_FS_INFO *pOSFSInfo, BOOLEAN bSet)
++ {
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	if (bSet) {
++ 		/* Save uid and gid used for filesystem access. */
++ 		/* Set user and group to 0 (root) */
++@@ -1097,6 +1101,7 @@ static inline void __RtmpOSFSInfoChange(
++ 		current->fsgid = pOSFSInfo->fsgid;
++ #endif
++ 	}
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ }
++ 
++ 
++@@ -2230,7 +2235,9 @@ VOID RtmpDrvAllMacPrint(
++ {
++ 	struct file *file_w;
++ 	RTMP_STRING *fileName = "MacDump.txt";
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	mm_segment_t orig_fs;
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	RTMP_STRING *msg;
++ 	UINT32 macAddr = 0, macValue = 0;
++ 	INT ret;
++@@ -2240,8 +2247,11 @@ VOID RtmpDrvAllMacPrint(
++ 	if (!msg)
++ 		return;
++ 
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	orig_fs = get_fs();
++ 	set_fs(KERNEL_DS);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
+++
++ 	/* open file */
++ 	file_w = filp_open(fileName, O_WRONLY | O_CREAT, 0);
++ 
++@@ -2263,19 +2273,23 @@ VOID RtmpDrvAllMacPrint(
++ 						 "msg sprintf error!!!\n");
++ 				}
++ 				/* write data to file */
++-#if (KERNEL_VERSION(4, 1, 0) > LINUX_VERSION_CODE)
+++#if (KERNEL_VERSION(4, 1, 0) > LINUX_VERSION_CODE) /* kernel < 4.1 */
++ 			if (file_w->f_op->write) {
++ 				file_w->f_op->write(file_w, msg, strlen(msg), &file_w->f_pos);
++ 			} else{
++ 				MTWF_DBG(NULL, DBG_CAT_INIT, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "no file write method\n");
++ 			}
++-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0))
+++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)) /* kernel >= 5.18 */
+++			/* __kernel_write is a GPL symbol, we cant use it */
+++			kernel_write(file_w, msg, strlen(msg), &file_w->f_pos);
+++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)) /* 4.19 =< kernel < 5.18 */
++ 			__kernel_write(file_w, msg, strlen(msg), &file_w->f_pos);
++-#elif (KERNEL_VERSION(4, 10, 0) <= LINUX_VERSION_CODE)
+++#elif (KERNEL_VERSION(4, 10, 0) <= LINUX_VERSION_CODE) /* 4.10 <= kernel < 4.19 */
++ 			kernel_write(file_w, msg, strlen(msg), &file_w->f_pos);
++-#else
+++#else /* 4.1 <= kernel < 4.10 */
++ 			__vfs_write(file_w, msg, strlen(msg), &file_w->f_pos);
++-#endif
+++#endif /* (KERNEL_VERSION(4, 1, 0) > LINUX_VERSION_CODE) */
+++
++ 				MTWF_DBG(NULL, DBG_CAT_INIT, DBG_SUBCAT_ALL, DBG_LVL_INFO, "%s", msg);
++ 				macAddr += AddrStep;
++ 			}
++@@ -2289,8 +2303,9 @@ VOID RtmpDrvAllMacPrint(
++ 
++ 		filp_close(file_w, NULL);
++ 	}
++-
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	set_fs(orig_fs);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	os_free_mem(msg);
++ }
++ 
++@@ -2303,7 +2318,9 @@ VOID RtmpDrvAllE2PPrint(
++ {
++ 	struct file *file_w;
++ 	RTMP_STRING *fileName = "EEPROMDump.txt";
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	mm_segment_t orig_fs;
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	RTMP_STRING *msg;
++ 	USHORT eepAddr = 0;
++ 	USHORT eepValue;
++@@ -2314,8 +2331,11 @@ VOID RtmpDrvAllE2PPrint(
++ 	if (!msg)
++ 		return;
++ 
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	orig_fs = get_fs();
++ 	set_fs(KERNEL_DS);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
+++
++ 	/* open file */
++ 	file_w = filp_open(fileName, O_WRONLY | O_CREAT, 0);
++ 
++@@ -2342,6 +2362,9 @@ VOID RtmpDrvAllE2PPrint(
++ 				} else{
++ 					MTWF_DBG(NULL, DBG_CAT_INIT, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "no file write method\n");
++ 				}
+++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)) /* kernel >= 5.18 */
+++				/* __kernel_write is a GPL symbol, we cant use it */
+++				kernel_write(file_w, msg, strlen(msg), &file_w->f_pos);
++ #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0))
++ 				__kernel_write(file_w, msg, strlen(msg), &file_w->f_pos);
++ #elif (KERNEL_VERSION(4, 10, 0) <= LINUX_VERSION_CODE)
++@@ -2349,6 +2372,7 @@ VOID RtmpDrvAllE2PPrint(
++ #else
++ 				__vfs_write(file_w, msg, strlen(msg), &file_w->f_pos);
++ #endif
+++
++ 				MTWF_DBG(NULL, DBG_CAT_INIT, DBG_SUBCAT_ALL, DBG_LVL_INFO, "%s", msg);
++ 				eepAddr += AddrStep;
++ 				pMacContent += (AddrStep >> 1);
++@@ -2365,7 +2389,9 @@ VOID RtmpDrvAllE2PPrint(
++ 		filp_close(file_w, NULL);
++ 	}
++ 
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	set_fs(orig_fs);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	os_free_mem(msg);
++ }
++ 
++@@ -2377,10 +2403,15 @@ VOID RtmpDrvAllRFPrint(
++ {
++ 	struct file *file_w;
++ 	RTMP_STRING *fileName = "RFDump.txt";
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	mm_segment_t orig_fs;
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	orig_fs = get_fs();
++ 	set_fs(KERNEL_DS);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
+++
++ 	/* open file */
++ 	file_w = filp_open(fileName, O_WRONLY | O_CREAT, 0);
++ 
++@@ -2398,6 +2429,9 @@ VOID RtmpDrvAllRFPrint(
++ 			} else{
++ 				MTWF_DBG(NULL, DBG_CAT_INIT, DBG_SUBCAT_ALL, DBG_LVL_ERROR, "no file write method\n");
++ 			}
+++#elif (KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE) /* kernel >= 5.18 */
+++			/* __kernel_write is a GPL symbol, we cant use it */
+++			kernel_write(file_w, pBuf, BufLen, &file_w->f_pos);
++ #elif (KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE)
++ 			__kernel_write(file_w, pBuf, BufLen, &file_w->f_pos);
++ #elif (KERNEL_VERSION(4, 10, 0) <= LINUX_VERSION_CODE)
++@@ -2411,7 +2445,9 @@ VOID RtmpDrvAllRFPrint(
++ 		filp_close(file_w, NULL);
++ 	}
++ 
++-	set_fs(orig_fs);
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
+++ 	set_fs(orig_fs);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ }
++ 
++ 
++--- a/mt_wifi/chips/mt7981_dbg.c
+++++ b/mt_wifi/chips/mt7981_dbg.c
++@@ -4567,7 +4567,9 @@ static INT32 chip_show_coredump_proc(str
++ 	RTMP_STRING *msg;
++ 	UCHAR fileName[64];
++ 	struct file *file_w;
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	mm_segment_t orig_fs;
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	UINT32 addr = 0;
++ 	UINT32 end_addr = 0;
++ 	UINT32 macVal = 0;
++@@ -4580,8 +4582,10 @@ static INT32 chip_show_coredump_proc(str
++ 
++ 	NdisZeroMemory(msg, 4);
++ 
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	orig_fs = get_fs();
++ 	set_fs(KERNEL_DS);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 
++ 	while (COREDUMP_QUEUE_INFO[i].Name != NULL) {
++ 		snprintf(fileName, sizeof(fileName), "/etc/%s.bin", COREDUMP_QUEUE_INFO[i].Name);
++@@ -4626,7 +4630,9 @@ static INT32 chip_show_coredump_proc(str
++ 	}
++ 
++ done:
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	set_fs(orig_fs);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	os_free_mem(msg);
++ 
++ 	return TRUE;
++--- a/mt_wifi/chips/mt7986_dbg.c
+++++ b/mt_wifi/chips/mt7986_dbg.c
++@@ -4795,7 +4795,9 @@ static INT32 chip_show_coredump_proc(str
++ 	RTMP_STRING *msg;
++ 	UCHAR fileName[64];
++ 	struct file *file_w;
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	mm_segment_t orig_fs;
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	UINT32 addr = 0;
++ 	UINT32 end_addr = 0;
++ 	UINT32 macVal = 0;
++@@ -4809,8 +4811,10 @@ static INT32 chip_show_coredump_proc(str
++ 
++ 	NdisZeroMemory(msg, 4);
++ 
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	orig_fs = get_fs();
++ 	set_fs(KERNEL_DS);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 
++ 	while (COREDUMP_QUEUE_INFO[i].Name != NULL) {
++ 		ret = snprintf(fileName, sizeof(fileName), "/etc/%s.bin", COREDUMP_QUEUE_INFO[i].Name);
++@@ -4859,7 +4863,9 @@ static INT32 chip_show_coredump_proc(str
++ 	}
++ 
++ done:
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	set_fs(orig_fs);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	os_free_mem(msg);
++ 
++ 	return TRUE;
++--- a/mt_wifi/include/os/rt_linux.h
+++++ b/mt_wifi/include/os/rt_linux.h
++@@ -366,7 +366,9 @@ typedef struct file *RTMP_OS_FD;
++ typedef struct _OS_FS_INFO_ {
++ 	int				fsuid;
++ 	int				fsgid;
++-	mm_segment_t	fs;
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
+++ 	mm_segment_t	fs;
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ } OS_FS_INFO;
++ 
++ typedef struct _RTMP_OS_FD {
++--- a/mt_wifi/chips/mt7916_dbg.c
+++++ b/mt_wifi/chips/mt7916_dbg.c
++@@ -4757,7 +4757,9 @@ static INT32 chip_show_coredump_proc(str
++ 	RTMP_STRING *msg;
++ 	UCHAR fileName[64];
++ 	struct file *file_w;
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	mm_segment_t orig_fs;
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	UINT32 addr = 0;
++ 	UINT32 end_addr = 0;
++ 	UINT32 macVal = 0;
++@@ -4771,8 +4773,10 @@ static INT32 chip_show_coredump_proc(str
++ 
++ 	NdisZeroMemory(msg, 4);
++ 
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	orig_fs = get_fs();
++ 	set_fs(KERNEL_DS);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 
++ 	while (COREDUMP_QUEUE_INFO[i].Name != NULL) {
++ 		ret = snprintf(fileName, sizeof(fileName), "/etc/%s.bin", COREDUMP_QUEUE_INFO[i].Name);
++@@ -4821,7 +4825,9 @@ static INT32 chip_show_coredump_proc(str
++ 	}
++ 
++ done:
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	set_fs(orig_fs);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	os_free_mem(msg);
++ 
++ 	return TRUE;
++--- a/mt_wifi/embedded/ap/ap_cfg.c
+++++ b/mt_wifi/embedded/ap/ap_cfg.c
++@@ -17779,7 +17779,9 @@ INT Show_SimSectionUlm_Proc(RTMP_ADAPTER
++ {
++ 	UCHAR fileName[64];
++ 	struct file *file_w;
++-	mm_segment_t orig_fs;
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
+++ 	mm_segment_t	fs;
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	UINT32 startaddr = 0,  endaddr = 0, addr = 0;
++ 	UINT32 macVal = 0;
++ 	UINT Idx;/* enable load from bin */
++@@ -17819,9 +17821,10 @@ INT Show_SimSectionUlm_Proc(RTMP_ADAPTER
++ 		startaddr = 0xE0000000;
++ 		endaddr = 0xE00D7FFF;
++ 	}
++-
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	orig_fs = get_fs();
++ 	set_fs(KERNEL_DS);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	/* open file */
++ 	file_w = filp_open(fileName, O_WRONLY | O_CREAT, 0);
++ 
++@@ -17861,7 +17864,9 @@ INT Show_SimSectionUlm_Proc(RTMP_ADAPTER
++ 	}
++ 
++ done:
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 	set_fs(orig_fs);
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 
++ 	return TRUE;
++ }
+diff --git a/package/mtk/drivers/mt_wifi/patches-7672/023-fix-printk-redefined-in-rt_linux.patch b/package/mtk/drivers/mt_wifi/patches-7672/023-fix-printk-redefined-in-rt_linux.patch
+new file mode 100644
+index 0000000000..74d60d81d0
+--- /dev/null
++++ b/package/mtk/drivers/mt_wifi/patches-7672/023-fix-printk-redefined-in-rt_linux.patch
+@@ -0,0 +1,14 @@
++--- a/mt_wifi/include/os/rt_linux.h
+++++ b/mt_wifi/include/os/rt_linux.h
++@@ -725,7 +725,11 @@ typedef struct os_cookie	*POS_COOKIE;
++ #if (KERNEL_VERSION(4, 10, 0) > LINUX_VERSION_CODE)
++ #define MTWF_PRINT	printk
++ #else
+++/* For kernel versions between 4.10 and 5.4, keep the original (problematic) printk redefinition.
+++   For kernels newer than 5.4, this redefinition causes compilation errors. */
+++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(5, 4, 0))
++ #define  printk(fmt, ...) printk(KERN_CONT fmt, ##__VA_ARGS__)
+++#endif /* LINUX_VERSION_CODE <= 5.4.0 */
++ #define MTWF_PRINT	pr_cont
++ #endif
++ #ifdef DBG_ENHANCE
+diff --git a/package/mtk/drivers/mt_wifi/patches-7672/024-fix-stdarg_h-not-found-error.patch b/package/mtk/drivers/mt_wifi/patches-7672/024-fix-stdarg_h-not-found-error.patch
+new file mode 100644
+index 0000000000..9acf122a07
+--- /dev/null
++++ b/package/mtk/drivers/mt_wifi/patches-7672/024-fix-stdarg_h-not-found-error.patch
+@@ -0,0 +1,22 @@
++--- a/mt_wifi/embedded/ap/ap_mlme.c
+++++ b/mt_wifi/embedded/ap/ap_mlme.c
++@@ -26,7 +26,7 @@
++  */
++ 
++ #include "rt_config.h"
++-#include <stdarg.h>
+++#include <linux/stdarg.h>
++ 
++ #ifdef IXIA_C50_MODE
++ #ifdef MT7986
++--- a/mt_wifi/embedded/common/mlme.c
+++++ b/mt_wifi/embedded/common/mlme.c
++@@ -25,7 +25,7 @@
++ */
++ 
++ #include "rt_config.h"
++-#include <stdarg.h>
+++#include <linux/stdarg.h>
++ #ifdef DOT11R_FT_SUPPORT
++ #include "ft.h"
++ #endif /* DOT11R_FT_SUPPORT */
+diff --git a/package/mtk/drivers/mt_wifi/patches-7672/025-remove-rt_os-h-kernel-version-check.patch b/package/mtk/drivers/mt_wifi/patches-7672/025-remove-rt_os-h-kernel-version-check.patch
+new file mode 100644
+index 0000000000..8d4cc651e8
+--- /dev/null
++++ b/package/mtk/drivers/mt_wifi/patches-7672/025-remove-rt_os-h-kernel-version-check.patch
+@@ -0,0 +1,32 @@
++--- a/mt_wifi/include/os/rt_os.h
+++++ b/mt_wifi/include/os/rt_os.h
++@@ -44,6 +44,8 @@
++ #endif
++ #endif /* LINUX */
++ 
+++#else /* just check version and decide whether we should define SIOCDEVPRIVATE and SIOCIWFIRSTPRIV */
+++
++ #ifdef CONFIG_STA_SUPPORT
++ #define RT_PRIV_IOCTL							(SIOCIWFIRSTPRIV + 0x01) /* Sync. with AP for wsc upnp daemon */
++ #define RTPRIV_IOCTL_SET							(SIOCIWFIRSTPRIV + 0x02)
++@@ -143,9 +145,9 @@
++ #define RTPRIV_IOCTL_SET_FT_PARAM                                       (SIOCIWFIRSTPRIV + 0x18)
++ #endif
++ 
++-#else /*for kernel version >= kernel 5.6.0*/
++-
++ 
+++// remove this, since it is still incomplete enum
+++/*
++ enum {
++ 	RTPRIV_IOCTL_SET = SIOCDEVPRIVATE,
++ 	RTPRIV_IOCTL_SHOW,
++@@ -169,7 +171,7 @@ enum {
++ 	RTPRIV_IOCTL_STA_SHOW,
++ 	RTPRIV_IOCTL_SUBCMD_SHOW,
++ };
++-
+++*/
++ #endif
++ 
++ #endif /* _RT_OS_H_ */
+diff --git a/package/mtk/drivers/mt_wifi/patches-7672/026-replace-deprecated-prandom_u32-usage.patch b/package/mtk/drivers/mt_wifi/patches-7672/026-replace-deprecated-prandom_u32-usage.patch
+new file mode 100644
+index 0000000000..03c707c3e2
+--- /dev/null
++++ b/package/mtk/drivers/mt_wifi/patches-7672/026-replace-deprecated-prandom_u32-usage.patch
+@@ -0,0 +1,13 @@
++--- a/mt_wifi/embedded/common/rt_os_util.c
+++++ b/mt_wifi/embedded/common/rt_os_util.c
++@@ -260,7 +260,9 @@ INT32  RtPrivIoctlSetVal(VOID)
++ 
++ UINT32 MtRandom32(VOID)
++ {
++-#if (LINUX_VERSION_CODE  >= KERNEL_VERSION(3, 8, 0))
+++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+++	return get_random_u32();
+++#elif (LINUX_VERSION_CODE  >= KERNEL_VERSION(3, 8, 0))
++ 	return prandom_u32();
++ #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0) */
++ 	return random32();
+diff --git a/package/mtk/drivers/mt_wifi/patches-7672/027-replace-deprecated-ioremap_nocache-usage.patch b/package/mtk/drivers/mt_wifi/patches-7672/027-replace-deprecated-ioremap_nocache-usage.patch
+new file mode 100644
+index 0000000000..43c2a9e8d9
+--- /dev/null
++++ b/package/mtk/drivers/mt_wifi/patches-7672/027-replace-deprecated-ioremap_nocache-usage.patch
+@@ -0,0 +1,11 @@
++--- a/mt_wifi/mcu/fwdl_mt.c
+++++ b/mt_wifi/mcu/fwdl_mt.c
++@@ -788,7 +788,7 @@ static NDIS_STATUS load_emi_fw(struct _R
++ 			"emi_phy_addr = 0x%08x, emi_phy_addr_size = 0x%08x\n",
++ 			pChipCap->emi_phy_addr, pChipCap->emi_phy_addr_size);
++ 
++-	vir_addr = ioremap_nocache(pChipCap->emi_phy_addr, pChipCap->emi_phy_addr_size);
+++	vir_addr = ioremap(pChipCap->emi_phy_addr, pChipCap->emi_phy_addr_size);
++ 	if (vir_addr != 0) {
++ 		/* parsing and find download emi payload */
++ 		for (i = 0; i < target->num_of_region; i++) {
+diff --git a/package/mtk/drivers/mt_wifi/patches-7672/028-replace-deprecated-PCI_DMA_FROMDEVICE-macro.patch b/package/mtk/drivers/mt_wifi/patches-7672/028-replace-deprecated-PCI_DMA_FROMDEVICE-macro.patch
+new file mode 100644
+index 0000000000..0275fca913
+--- /dev/null
++++ b/package/mtk/drivers/mt_wifi/patches-7672/028-replace-deprecated-PCI_DMA_FROMDEVICE-macro.patch
+@@ -0,0 +1,88 @@
++--- a/mt_wifi/embedded/common/hif_pci.c
+++++ b/mt_wifi/embedded/common/hif_pci.c
++@@ -1855,7 +1855,7 @@ static INT rx_scatter_gather_copy(
++ #if defined(CONFIG_WIFI_PAGE_ALLOC_SKB)
++ 			if (drop_scatter == FALSE) {
++ 				dma_sync_single_for_cpu((struct device *)(((POS_COOKIE)(pAd->OS_Cookie))->pDev),
++-										(dma_addr_t)pCurRxD->SDP0, rx_ring->RxBufferSize, PCI_DMA_FROMDEVICE);
+++										(dma_addr_t)pCurRxD->SDP0, rx_ring->RxBufferSize, DMA_FROM_DEVICE);
++ 				memcpy((cp_skb_pkt + buf_idx), cur_alloc_va, pCurRxD->SDL0);
++ 				buf_idx += pCurRxD->SDL0;
++ 			}
++@@ -2059,7 +2059,7 @@ struct tx_rx_ctl *tr_ctl = &pAd->tr_ctl;
++ 		}
++ 
++ 		dma_sync_single_for_cpu((struct device *)(((POS_COOKIE)(pAd->OS_Cookie))->pDev),
++-								(dma_addr_t)pRxD->SDP0, rx_ring->RxBufferSize, PCI_DMA_FROMDEVICE);
+++								(dma_addr_t)pRxD->SDP0, rx_ring->RxBufferSize, DMA_FROM_DEVICE);
++ 
++ 		RTMP_DCACHE_FLUSH(cur_alloc_pa, pRxCell->DmaBuf.AllocSize);
++ 
++--- a/mt_wifi/os/linux/rt_rbus_pci_util.c
+++++ b/mt_wifi/os/linux/rt_rbus_pci_util.c
++@@ -159,7 +159,7 @@ PNDIS_PACKET RTMP_AllocateRxPacketBuffer
++ 	}
++ 
++ 	if (pkt) {
++-		*pa = dma_map_single(pdev, *va, size, PCI_DMA_FROMDEVICE);
+++		*pa = dma_map_single(pdev, *va, size, DMA_FROM_DEVICE);
++ 		 if (dma_mapping_error(pdev, *pa)) {
++ 			MTWF_DBG(NULL, DBG_CAT_HIF, CATHIF_PCI, DBG_LVL_ERROR, "!!!!dma_mapping_error(pdev, *pa)!!!!\n");
++ 			switch (rx_ring->buf_type) {
++@@ -231,10 +231,10 @@ ra_dma_addr_t linux_pci_map_single(void
++ 	struct device *pdev = (struct device *)pDev;
++ 
++ 	if (direction == RTMP_PCI_DMA_TODEVICE)
++-		direction = PCI_DMA_TODEVICE;
+++		direction = DMA_TO_DEVICE;
++ 
++ 	if (direction == RTMP_PCI_DMA_FROMDEVICE)
++-		direction = PCI_DMA_FROMDEVICE;
+++		direction = DMA_FROM_DEVICE;
++ 
++ 	/*
++ 	 *	------ Porting Information ------
++@@ -264,10 +264,10 @@ void linux_pci_unmap_single(void *pDev,
++ 	struct device *pdev = (struct device *)pDev;
++ 
++ 	if (direction == RTMP_PCI_DMA_TODEVICE)
++-		direction = PCI_DMA_TODEVICE;
+++		direction = DMA_TO_DEVICE;
++ 
++ 	if (direction == RTMP_PCI_DMA_FROMDEVICE)
++-		direction = PCI_DMA_FROMDEVICE;
+++		direction = DMA_FROM_DEVICE;
++ 
++ 	if (size > 0)
++ 		dma_unmap_single(pdev, DmaAddr, size, direction);
++--- a/warp_driver/warp/warp_bm_v2.c
+++++ b/warp_driver/warp/warp_bm_v2.c
++@@ -1169,7 +1169,7 @@ wed_rx_budget_ring_exit(
++ 	for (i = 0; i < ring_len; i++)
++ 		wed_rx_bm_dma_cb_exit(wed, &ring->cell[i]);
++ 
++-	dma_unmap_single(&wed->pdev->dev, desc->alloc_pa, desc->alloc_size, PCI_DMA_FROMDEVICE);
+++	dma_unmap_single(&wed->pdev->dev, desc->alloc_pa, desc->alloc_size, DMA_FROM_DEVICE);
++ 	warp_os_free_mem(desc->alloc_va);
++ 	memset(desc, 0, sizeof(*desc));
++ 
++--- a/mt_wifi/embedded/plug_in/whnat/wed.c
+++++ b/mt_wifi/embedded/plug_in/whnat/wed.c
++@@ -231,7 +231,7 @@ struct sk_buff *alloc_dma_tx_pkt(
++ 
++ 	if (pkt) {
++ 		*vaddr = (void *) pkt->data;
++-		*paddr = dma_map_single(&pdev->dev, *vaddr, len, PCI_DMA_TODEVICE);
+++		*paddr = dma_map_single(&pdev->dev, *vaddr, len, DMA_TO_DEVICE);
++ 	} else {
++ 		*vaddr = (void *) NULL;
++ 		*paddr = (dma_addr_t) 0;
++@@ -253,7 +253,7 @@ int free_dma_tx_pkt(
++ 	if (pkt == NULL)
++ 		return -1;
++ 
++-	dma_unmap_single(&pdev->dev, pa, len, PCI_DMA_FROMDEVICE);
+++	dma_unmap_single(&pdev->dev, pa, len, DMA_FROM_DEVICE);
++ 	dev_kfree_skb_any(pkt);
++ 	return 0;
++ }
+diff --git a/package/mtk/drivers/mt_wifi/patches-7672/029-replace-deprecated-pr_warning-define.patch b/package/mtk/drivers/mt_wifi/patches-7672/029-replace-deprecated-pr_warning-define.patch
+new file mode 100644
+index 0000000000..2b0cfe9f86
+--- /dev/null
++++ b/package/mtk/drivers/mt_wifi/patches-7672/029-replace-deprecated-pr_warning-define.patch
+@@ -0,0 +1,14 @@
++--- a/mt_wifi/include/os/rt_linux.h
+++++ b/mt_wifi/include/os/rt_linux.h
++@@ -736,7 +736,11 @@ typedef struct os_cookie	*POS_COOKIE;
++ /* Mapping Wi-Fi driver log to syslog level */
++ #define MTWF_PRINT_DBG_LVL_OFF		pr_crit
++ #define MTWF_PRINT_DBG_LVL_ERROR	pr_err
+++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(5, 4, 0))
++ #define MTWF_PRINT_DBG_LVL_WARN		pr_warning
+++#else /* pr_warning is deprecated since version 5.5 */
+++#define MTWF_PRINT_DBG_LVL_WARN		pr_warn
+++#endif /* LINUX_VERSION_CODE <= 5.4.0 */
++ #define MTWF_PRINT_DBG_LVL_NOTICE	pr_notice
++ #define MTWF_PRINT_DBG_LVL_INFO		pr_info
++ #define MTWF_PRINT_DBG_LVL_DEBUG	pr_info
+diff --git a/package/mtk/drivers/mt_wifi/patches-7672/030-replace-deprecated-pci_set_dma_mask-usage.patch b/package/mtk/drivers/mt_wifi/patches-7672/030-replace-deprecated-pci_set_dma_mask-usage.patch
+new file mode 100644
+index 0000000000..eebe073432
+--- /dev/null
++++ b/package/mtk/drivers/mt_wifi/patches-7672/030-replace-deprecated-pci_set_dma_mask-usage.patch
+@@ -0,0 +1,26 @@
++--- a/mt_wifi/os/linux/rbus_prop_dev.c
+++++ b/mt_wifi/os/linux/rbus_prop_dev.c
++@@ -89,12 +89,22 @@ static int DEVINIT mt_rbus_probe(struct
++ 
++ 	MTWF_DBG(pAd, DBG_CAT_HIF, CATHIF_PCI, DBG_LVL_INFO, "===> rt2880_probe\n");
++ 
++-	if (!pci_set_dma_mask(pdev, DMA_BIT_MASK(32))) {
+++	if (
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
+++		!pci_set_dma_mask(pdev, DMA_BIT_MASK(32))
+++#else /* pci_set_dma_mask is deprecated since version 5.18, just wrapper */
+++		!dma_set_mask(&pdev->dev, DMA_BIT_MASK(32))
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
+++	) {
+++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
++ 		/*
++ 		 * pci_set_consistent_dma_mask() will always be able to set the same
++ 		 * or a smaller mask as pci_set_dma_mask()
++ 		 */
++ 		pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(32));
+++#else /* pci_set_consistent_dma_mask is deprecated since version 5.18, just wrapper */
+++		dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(32));
+++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) */
++ 	} else {
++ 		MTWF_DBG(pAd, DBG_CAT_HIF, CATHIF_PCI, DBG_LVL_ERROR,
++ 				 "set DMA mask failed!errno=%d\n", rv);
+diff --git a/package/mtk/drivers/mt_wifi/patches-7672/031-remove-unused-and-deprecated-tim-in-bn_lib.patch b/package/mtk/drivers/mt_wifi/patches-7672/031-remove-unused-and-deprecated-tim-in-bn_lib.patch
+new file mode 100644
+index 0000000000..76839a3989
+--- /dev/null
++++ b/package/mtk/drivers/mt_wifi/patches-7672/031-remove-unused-and-deprecated-tim-in-bn_lib.patch
+@@ -0,0 +1,18 @@
++--- a/mt_wifi/embedded/security/bn_lib.c
+++++ b/mt_wifi/embedded/security/bn_lib.c
++@@ -6399,7 +6399,6 @@ static int bnrand(int pseudorand, BIGNUM
++ {
++ 	unsigned char *buf = NULL;
++ 	int ret = 0, bit, bytes, mask;
++-	time_t tim;
++ 	UINT32 i;
++ 
++ 	if (bits == 0) {
++@@ -6424,7 +6423,6 @@ static int bnrand(int pseudorand, BIGNUM
++ 	}
++ 
++ 	/* make a random number and set the top and bottom bits */
++-	NdisGetSystemUpTime((ULONG *)(&tim));
++ 
++ 	for (i = 0; i < bytes; i++)
++ 		buf[i] = randombyte();
+diff --git a/package/mtk/drivers/mt_wifi/patches-7672/032-remove-deprecated-compound_dtor-in-printk.patch b/package/mtk/drivers/mt_wifi/patches-7672/032-remove-deprecated-compound_dtor-in-printk.patch
+new file mode 100644
+index 0000000000..7d5ebd19b2
+--- /dev/null
++++ b/package/mtk/drivers/mt_wifi/patches-7672/032-remove-deprecated-compound_dtor-in-printk.patch
+@@ -0,0 +1,13 @@
++--- a/mt_wifi/os/linux/rt_linux.c
+++++ b/mt_wifi/os/linux/rt_linux.c
++@@ -5751,8 +5751,8 @@ void os_system_tx_queue_dump(PNET_DEV de
++ 			if (skb->head) {
++ 				p = virt_to_head_page(skb->head);
++ 				page_size = PAGE_SIZE << compound_order(p);
++-				printk("%s(): index:%d, page:%p ,rfcnt:%d, page size:%zu, order:%u, dtor:%u\n", __func__, k++, p,
++-					OS_PAGE_REF(p), page_size, (unsigned int) compound_order(p), (unsigned int) p->compound_dtor);
+++				printk("%s(): index:%d, page:%p ,rfcnt:%d, page size:%zu, order:%u\n", __func__, k++, p,
+++					OS_PAGE_REF(p), page_size, (unsigned int) compound_order(p));
++ 			}
++ 			skb = skb->next;
++ 		}
+diff --git a/package/mtk/drivers/warp/patches/003-drop-MODULE_SUPPORTED_DEVICE-macro.patch b/package/mtk/drivers/warp/patches/003-drop-MODULE_SUPPORTED_DEVICE-macro.patch
+new file mode 100644
+index 0000000000..01c48f7085
+--- /dev/null
++++ b/package/mtk/drivers/warp/patches/003-drop-MODULE_SUPPORTED_DEVICE-macro.patch
+@@ -0,0 +1,10 @@
++--- a/warp_main.c
+++++ b/warp_main.c
++@@ -1508,5 +1508,6 @@ module_exit(warp_module_exit);
++ 
++ MODULE_LICENSE("GPL");
++ MODULE_DESCRIPTION(DRIVER_DESC);
++-MODULE_SUPPORTED_DEVICE("mt7615 within mt7622");
+++/* MODULE_SUPPORTED_DEVICE is obsolete in modern kernels */
+++// MODULE_SUPPORTED_DEVICE("mt7615 within mt7622");
++ 
+diff --git a/package/mtk/drivers/warp/patches/004-fix-stdarg_h-not-found-error.patch b/package/mtk/drivers/warp/patches/004-fix-stdarg_h-not-found-error.patch
+new file mode 100644
+index 0000000000..165abf113f
+--- /dev/null
++++ b/package/mtk/drivers/warp/patches/004-fix-stdarg_h-not-found-error.patch
+@@ -0,0 +1,11 @@
++--- a/warp_proc.c
+++++ b/warp_proc.c
++@@ -21,7 +21,7 @@
++ #include "wed.h"
++ #include "warp.h"
++ #include "warp_hw.h"
++-#include <stdarg.h>
+++#include <linux/stdarg.h>
++ #include "mcu/warp_woif.h"
++ #include "mcu/warp_wo.h"
++ #include "warp_meminfo_list.h"
+diff --git a/package/mtk/drivers/warp/patches/005-fix-procfs-api-and-macro-incompatible-in-new-kernel.patch b/package/mtk/drivers/warp/patches/005-fix-procfs-api-and-macro-incompatible-in-new-kernel.patch
+new file mode 100644
+index 0000000000..7469d332b2
+--- /dev/null
++++ b/package/mtk/drivers/warp/patches/005-fix-procfs-api-and-macro-incompatible-in-new-kernel.patch
+@@ -0,0 +1,383 @@
++--- a/warp_proc.c
+++++ b/warp_proc.c
++@@ -173,7 +173,7 @@ wdma_proc_show(struct seq_file *seq, voi
++ static int
++ wdma_proc_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, wdma_proc_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, wdma_proc_show, pde_data(file_inode(file)));
++ }
++ 
++ /*
++@@ -187,7 +187,7 @@ wdma_proc_write(struct file *file, const
++ 	char value[64] = "";
++ 	char *end = NULL;
++ 	char choice;
++-	struct wdma_entry *wdma = (struct wdma_entry *)PDE_DATA(file_inode(file));
+++	struct wdma_entry *wdma = (struct wdma_entry *)pde_data(file_inode(file));
++ 
++ 	if (buff && !copy_from_user(value, buff, len1)) {
++ 		choice = warp_str_tol(value, &end, 10);
++@@ -263,7 +263,7 @@ warp_proc_handle(struct seq_file *seq, s
++ static int
++ wed_proc_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, wed_proc_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, wed_proc_show, pde_data(file_inode(file)));
++ }
++ 
++ /*
++@@ -276,7 +276,7 @@ wed_proc_write(struct file *file, const
++ 	char value[64] = "";
++ 	char *end = NULL;
++ 	char choice;
++-	struct wed_entry *wed = (struct wed_entry *)PDE_DATA(file_inode(file));
+++	struct wed_entry *wed = (struct wed_entry *)pde_data(file_inode(file));
++ 
++ 	if (buff && !copy_from_user(value, buff, len1)) {
++ 		choice = warp_str_tol(value, &end, 10);
++@@ -320,7 +320,7 @@ warp_proc_cr_show(struct seq_file *seq,
++ static int
++ warp_proc_cr_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, warp_proc_cr_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, warp_proc_cr_show, pde_data(file_inode(file)));
++ }
++ 
++ /*
++@@ -339,7 +339,7 @@ warp_proc_cr_write(struct file *file, co
++ 	char *s = value;
++ 	unsigned long addr;
++ 	u32 cr_value = 0;
++-	struct warp_entry *warp = (struct warp_entry *)PDE_DATA(file_inode(file));
+++	struct warp_entry *warp = (struct warp_entry *)pde_data(file_inode(file));
++ 
++ 	if (buff && !copy_from_user(value, buff, len1)) {
++ 		token = strsep(&s, " ");
++@@ -433,7 +433,7 @@ warp_proc_ctrl_show(struct seq_file *seq
++ static int
++ warp_proc_ctrl_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, warp_proc_ctrl_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, warp_proc_ctrl_show, pde_data(file_inode(file)));
++ }
++ 
++ /*
++@@ -450,7 +450,7 @@ warp_proc_ctrl_write(struct file *file,
++ 	char is_true;
++ 	char type;
++ 	char *s = value;
++-	struct warp_entry *warp = (struct warp_entry *)PDE_DATA(file_inode(file));
+++	struct warp_entry *warp = (struct warp_entry *)pde_data(file_inode(file));
++ 
++ 	if (len1 > 64 || len1 == 0) {
++ 		warp_dbg(WARP_DBG_OFF, "%s(): invalid length len1 %d!\n", __func__, len1);
++@@ -509,7 +509,7 @@ warp_proc_trace_show(struct seq_file *se
++ static int
++ warp_proc_trace_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, warp_proc_trace_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, warp_proc_trace_show, pde_data(file_inode(file)));
++ }
++ 
++ /*
++@@ -526,7 +526,7 @@ warp_proc_trace_write(struct file *file,
++ 	char *token;
++ 	char *s = value;
++ 	unsigned int tmp;
++-	struct warp_ctrl *ctrl = (struct warp_ctrl *)PDE_DATA(file_inode(file));
+++	struct warp_ctrl *ctrl = (struct warp_ctrl *)pde_data(file_inode(file));
++ 	struct warp_cputracer *tracer = &ctrl->bus.tracer;
++ 
++ 	if (buff && !copy_from_user(value, buff, len1)) {
++@@ -630,7 +630,7 @@ warp_proc_conf_show(struct seq_file *seq
++ static int
++ warp_proc_conf_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, warp_proc_conf_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, warp_proc_conf_show, pde_data(file_inode(file)));
++ }
++ 
++ /*
++@@ -647,7 +647,7 @@ warp_proc_conf_write(struct file *file,
++ 	char *token;
++ 	char *s = value;
++ 	unsigned int tmp;
++-	struct warp_ctrl *ctrl = (struct warp_ctrl *)PDE_DATA(file_inode(file));
+++	struct warp_ctrl *ctrl = (struct warp_ctrl *)pde_data(file_inode(file));
++ 
++ 	if (buff && !copy_from_user(value, buff, len1)) {
++ 		token = strsep(&s, ":");
++@@ -798,7 +798,7 @@ warp_proc_state_show(struct seq_file *se
++ static int
++ warp_proc_state_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, warp_proc_state_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, warp_proc_state_show, pde_data(file_inode(file)));
++ }
++ 
++ /*
++@@ -812,7 +812,7 @@ warp_proc_state_write(struct file *file,
++ 	char value[64];
++ 	char *end;
++ 	char log;
++-	struct warp_entry *warp = (struct warp_entry *)PDE_DATA(file_inode(file));
+++	struct warp_entry *warp = (struct warp_entry *)pde_data(file_inode(file));
++ 
++ 	if (buff && !copy_from_user(value, buff, len1)) {
++ 		log = warp_str_tol(value, &end, 10);
++@@ -850,7 +850,7 @@ warp_proc_cfg_show(struct seq_file *seq,
++ static int
++ warp_proc_cfg_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, warp_proc_cfg_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, warp_proc_cfg_show, pde_data(file_inode(file)));
++ }
++ 
++ /*
++@@ -871,7 +871,7 @@ warp_proc_tx_show(struct seq_file *seq,
++ static int
++ warp_proc_tx_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, warp_proc_tx_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, warp_proc_tx_show, pde_data(file_inode(file)));
++ }
++ 
++ /*
++@@ -892,7 +892,7 @@ warp_proc_rx_show(struct seq_file *seq,
++ static int
++ warp_proc_rx_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, warp_proc_rx_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, warp_proc_rx_show, pde_data(file_inode(file)));
++ }
++ 
++ 
++@@ -932,7 +932,7 @@ warp_proc_rxbm_show(struct seq_file *seq
++ static int
++ rxbm_proc_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, warp_proc_rxbm_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, warp_proc_rxbm_show, pde_data(file_inode(file)));
++ }
++ 
++ 
++@@ -966,7 +966,7 @@ wo_ee_proc_show(struct seq_file *seq, vo
++ static int
++ wo_ee_proc_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, wo_ee_proc_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, wo_ee_proc_show, pde_data(file_inode(file)));
++ }
++ 
++ 
++@@ -1030,14 +1030,14 @@ wo_proc_show(struct seq_file *seq, void
++ static int
++ wo_proc_open(struct inode *inode, struct file *file)
++ {
++-	return single_open(file, wo_proc_show, PDE_DATA(file_inode(file)));
+++	return single_open(file, wo_proc_show, pde_data(file_inode(file)));
++ }
++ 
++ static ssize_t
++ wo_proc_write(struct file *file, const char __user *usr_buff, size_t len1, loff_t *ppos)
++ {
++ 	u8 *buffer = NULL, *type = NULL, *sub_str = NULL, *input[11] = {0};
++-	struct warp_entry *warp = (struct warp_entry *)PDE_DATA(file_inode(file));
+++	struct warp_entry *warp = (struct warp_entry *)pde_data(file_inode(file));
++ 	int scan_num = 0, input_idx = 0, input_total = 0;
++ 	struct warp_msg_cmd cmd = {0};
++ 	u8 sendmsg_buf[128] = {0};
++@@ -1172,118 +1172,105 @@ error:
++ /*
++  * global file operation
++ */
++-static const struct file_operations proc_warp_trace_fops = {
++-	.owner = THIS_MODULE,
++-	.open = warp_proc_trace_open,
++-	.write  = warp_proc_trace_write,
++-	.read	= seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_warp_trace_fops = {
+++	.proc_open = warp_proc_trace_open,
+++	.proc_write  = warp_proc_trace_write,
+++	.proc_read	= seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++-static const struct file_operations proc_warp_conf_fops = {
++-	.owner = THIS_MODULE,
++-	.open = warp_proc_conf_open,
++-	.write  = warp_proc_conf_write,
++-	.read	= seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_warp_conf_fops = {
+++	.proc_open = warp_proc_conf_open,
+++	.proc_write  = warp_proc_conf_write,
+++	.proc_read	= seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++-static const struct file_operations proc_warp_cr_fops = {
++-	.owner = THIS_MODULE,
++-	.open = warp_proc_cr_open,
++-	.write  = warp_proc_cr_write,
++-	.read  = seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_warp_cr_fops = {
+++	.proc_open = warp_proc_cr_open,
+++	.proc_write  = warp_proc_cr_write,
+++	.proc_read  = seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++-static const struct file_operations proc_warp_stat_fops = {
++-	.owner = THIS_MODULE,
++-	.open = warp_proc_state_open,
++-	.write  = warp_proc_state_write,
++-	.read  = seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_warp_stat_fops = {
+++	.proc_open = warp_proc_state_open,
+++	.proc_write  = warp_proc_state_write,
+++	.proc_read  = seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++-static const struct file_operations proc_warp_cfg_fops = {
++-	.owner = THIS_MODULE,
++-	.open = warp_proc_cfg_open,
++-	.read  = seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_warp_cfg_fops = {
+++	.proc_open = warp_proc_cfg_open,
+++	.proc_read  = seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++-static const struct file_operations proc_warp_tx_fops = {
++-	.owner = THIS_MODULE,
++-	.open = warp_proc_tx_open,
++-	.read  = seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_warp_tx_fops = {
+++	.proc_open = warp_proc_tx_open,
+++	.proc_read  = seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++-static const struct file_operations proc_warp_rx_fops = {
++-	.owner = THIS_MODULE,
++-	.open = warp_proc_rx_open,
++-	.read  = seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_warp_rx_fops = {
+++	.proc_open = warp_proc_rx_open,
+++	.proc_read  = seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++-static const struct file_operations proc_wed_fops = {
++-	.owner = THIS_MODULE,
++-	.open = wed_proc_open,
++-	.write  = wed_proc_write,
++-	.read  = seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_wed_fops = {
+++	.proc_open = wed_proc_open,
+++	.proc_write  = wed_proc_write,
+++	.proc_read  = seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++-static const struct file_operations proc_wdma_fops = {
++-	.owner = THIS_MODULE,
++-	.open = wdma_proc_open,
++-	.write  = wdma_proc_write,
++-	.read  = seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_wdma_fops = {
+++	.proc_open = wdma_proc_open,
+++	.proc_write  = wdma_proc_write,
+++	.proc_read  = seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++-static const struct file_operations proc_ctrl_fops = {
++-	.owner = THIS_MODULE,
++-	.open = warp_proc_ctrl_open,
++-	.write  = warp_proc_ctrl_write,
++-	.read  = seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_ctrl_fops = {
+++	.proc_open = warp_proc_ctrl_open,
+++	.proc_write  = warp_proc_ctrl_write,
+++	.proc_read  = seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++ 
++-static const struct file_operations proc_rxbm_fops = {
++-	.owner = THIS_MODULE,
++-	.open = rxbm_proc_open,
++-	.write  = rxbm_proc_write,
++-	.read  = seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_rxbm_fops = {
+++	.proc_open = rxbm_proc_open,
+++	.proc_write  = rxbm_proc_write,
+++	.proc_read  = seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++-static const struct file_operations proc_wo_fops = {
++-	.owner = THIS_MODULE,
++-	.open = wo_proc_open,
++-	.write  = wo_proc_write,
++-	.read  = seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_wo_fops = {
+++	.proc_open = wo_proc_open,
+++	.proc_write  = wo_proc_write,
+++	.proc_read  = seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++-static const struct file_operations proc_woee_fops = {
++-	.owner = THIS_MODULE,
++-	.open = wo_ee_proc_open,
++-	.read  = seq_read,
++-	.llseek = seq_lseek,
++-	.release = single_release,
+++static const struct proc_ops proc_woee_fops = {
+++	.proc_open = wo_ee_proc_open,
+++	.proc_read  = seq_read,
+++	.proc_lseek = seq_lseek,
+++	.proc_release = single_release,
++ };
++ 
++ 
+diff --git a/package/mtk/drivers/warp/patches/006-replace-deprecated-PCI_DMA_FROMDEVICE-macro.patch b/package/mtk/drivers/warp/patches/006-replace-deprecated-PCI_DMA_FROMDEVICE-macro.patch
+new file mode 100644
+index 0000000000..87c3145d33
+--- /dev/null
++++ b/package/mtk/drivers/warp/patches/006-replace-deprecated-PCI_DMA_FROMDEVICE-macro.patch
+@@ -0,0 +1,11 @@
++--- a/warp_bm_v2.c
+++++ b/warp_bm_v2.c
++@@ -1169,7 +1169,7 @@ wed_rx_budget_ring_exit(
++ 	for (i = 0; i < ring_len; i++)
++ 		wed_rx_bm_dma_cb_exit(wed, &ring->cell[i]);
++ 
++-	dma_unmap_single(&wed->pdev->dev, desc->alloc_pa, desc->alloc_size, PCI_DMA_FROMDEVICE);
+++	dma_unmap_single(&wed->pdev->dev, desc->alloc_pa, desc->alloc_size, DMA_FROM_DEVICE);
++ 	warp_os_free_mem(desc->alloc_va);
++ 	memset(desc, 0, sizeof(*desc));
++ 
+diff --git a/package/mtk/drivers/warp/patches/007-1-fix-pointer-conversion-warning.patch b/package/mtk/drivers/warp/patches/007-1-fix-pointer-conversion-warning.patch
+new file mode 100644
+index 0000000000..8c65dba9a3
+--- /dev/null
++++ b/package/mtk/drivers/warp/patches/007-1-fix-pointer-conversion-warning.patch
+@@ -0,0 +1,33 @@
++--- a/wed.c
+++++ b/wed.c
++@@ -908,7 +908,7 @@ wed_proc_handle(struct wed_entry *wed, c
++ 
++ 	case WED_PROC_TX_DYNAMIC_FREE: {
++ 		if(IS_WED_HW_CAP(wed, WED_HW_CAP_DYN_TXBM))
++-			buf_free_task((unsigned long)wed);
+++			buf_free_task(wed);
++ 		else
++ 			warp_dbg(WARP_DBG_ERR, "DYBM is not enabled!\n");
++ 	}
++--- a/mcu/warp_ccif.c
+++++ b/mcu/warp_ccif.c
++@@ -81,7 +81,7 @@ static int ccif_init(struct woif_bus *bu
++ 		goto err;
++ 	}
++ 
++-	ccif->base_addr = (unsigned long)of_iomap(node, idx);
+++	ccif->base_addr = of_iomap(node, idx);
++ 	ccif->irq = irq_of_parse_and_map(node, idx);
++ 
++ 	warp_dbg(WARP_DBG_INF, "%s(): ccif: %p, addr: %lx, irq:%d!\n",
++--- a/mcu/warp_ccif.h
+++++ b/mcu/warp_ccif.h
++@@ -28,7 +28,7 @@ struct ccif_ring_ctrl {
++ };
++ 
++ struct ccif_entry {
++-	unsigned long base_addr;
+++	void __iomem * base_addr;
++ 	u8 irq;
++ 	struct ccif_ring_ctrl *tx_ring;
++ 	struct ccif_ring_ctrl *rx_ring;
+diff --git a/package/mtk/drivers/warp/patches/007-2-fix-incompatible-format-warning.patch b/package/mtk/drivers/warp/patches/007-2-fix-incompatible-format-warning.patch
+new file mode 100644
+index 0000000000..cb2d083528
+--- /dev/null
++++ b/package/mtk/drivers/warp/patches/007-2-fix-incompatible-format-warning.patch
+@@ -0,0 +1,88 @@
++--- a/warp_main.c
+++++ b/warp_main.c
++@@ -438,11 +438,11 @@ warp_probe(struct platform_device *pdev)
++ 		warp_fwdl_get_wo_heartbeat(&warp->woif.fwdl_ctrl, &heart_beat, warp->idx);
++ 		warp_dbg(WARP_DBG_ERR, "%s()wo heartbeat: 0x%x!\n", __func__, heart_beat);
++ 		/* dump WO PC LR log for 2 times*/
++-		warp_dbg(WARP_DBG_ERR, "%s()======WO PC LR dump======\n", __func__, heart_beat);
+++		warp_dbg(WARP_DBG_ERR, "%s()======WO PC LR dump, heartbeat=0x%x======\n", __func__, heart_beat);
++ 		for (i = 0; i < 2; i++) {
++ 			warp_wo_pc_lr_cr_dump(warp->idx);
++ 		}
++-		warp_dbg(WARP_DBG_ERR, "%s()======WO PC LR dump======\n", __func__, heart_beat);
+++		warp_dbg(WARP_DBG_ERR, "%s()======WO PC LR dump, heartbeat=0x%x======\n", __func__, heart_beat);
++ 	}
++ #endif
++ 	warp_dbg(WARP_DBG_INF, "%s(): platform device probe is done\n", __func__);
++--- a/mcu/warp_wo.c
+++++ b/mcu/warp_wo.c
++@@ -466,7 +466,7 @@ static void bus_rx_task(unsigned long da
++ 				rx_ctrl->dbg_ddone_check = 0;
++ 			}
++ 			} else {
++-				warp_dbg(WARP_DBG_ERR, "wriong ddone bit 0x%x: %d ", cidx, (rxd->ctrl & WED_CTL_DMA_DONE));
+++				warp_dbg(WARP_DBG_ERR, "wriong ddone bit 0x%x: %lu ", cidx, (rxd->ctrl & WED_CTL_DMA_DONE));
++ 			}
++ 		}
++ 
++--- a/warp_bm_v2.c
+++++ b/warp_bm_v2.c
++@@ -1216,7 +1216,7 @@ wed_rx_budget_ring_init(
++ 					desc->alloc_va,
++ 					desc->alloc_size, DMA_TO_DEVICE);
++ 	if (dma_mapping_error(&wed->pdev->dev, desc->alloc_pa)) {
++-		warp_dbg(WARP_DBG_ERR, "%s(): FATAL, DMA map ERROR, %ld\n", __func__, desc->alloc_va);
+++		warp_dbg(WARP_DBG_ERR, "%s(): FATAL, DMA map ERROR, %p\n", __func__, desc->alloc_va);
++ 		warp_os_free_mem(res->desc[idx].alloc_va);
++ 		ret = -1;
++ 		goto err;
++--- a/warp_proc.c
+++++ b/warp_proc.c
++@@ -453,7 +453,7 @@ warp_proc_ctrl_write(struct file *file,
++ 	struct warp_entry *warp = (struct warp_entry *)pde_data(file_inode(file));
++ 
++ 	if (len1 > 64 || len1 == 0) {
++-		warp_dbg(WARP_DBG_OFF, "%s(): invalid length len1 %d!\n", __func__, len1);
+++		warp_dbg(WARP_DBG_OFF, "%s(): invalid length len1 %zu!\n", __func__, len1);
++ 		goto end;
++ 	}
++ 
++--- a/regs/reg_v2/warp_hw_v2.c
+++++ b/regs/reg_v2/warp_hw_v2.c
++@@ -3048,14 +3048,14 @@ warp_reset_hw(struct wed_entry *wed, u32
++ 
++ 		if (ret < 0) {
++ 			warp_dbg(WARP_DBG_ERR, "%s(): wed_tx reset check fail,ret=%d\n", __func__, ret);
++-			warp_dbg(WARP_DBG_ERR, "%s(): check ser_busy_cnt: echo 18 > wed\n", __func__, ret);
+++			warp_dbg(WARP_DBG_ERR, "%s(): check ser_busy_cnt: echo 18 > wed\n", __func__);
++ 		}
++ 		/* TX free done reset - rx path */
++ 		ret = reset_rx_traffic(wed, reset_type);
++ 
++ 		if (ret < 0) {
++ 			warp_dbg(WARP_DBG_ERR, "%s(): wed_rx reset check fail,ret=%d\n", __func__, ret);
++-			warp_dbg(WARP_DBG_ERR, "%s(): check ser_busy_cnt: echo 18 > wed\n", __func__, ret);
+++			warp_dbg(WARP_DBG_ERR, "%s(): check ser_busy_cnt: echo 18 > wed\n", __func__);
++ 		}
++ 
++ #ifdef WED_RX_D_SUPPORT
++@@ -3064,7 +3064,7 @@ warp_reset_hw(struct wed_entry *wed, u32
++ 
++ 		if (ret < 0) {
++ 			warp_dbg(WARP_DBG_ERR, "%s(): wed_rx_data check fail,ret=%d\n", __func__, ret);
++-			warp_dbg(WARP_DBG_ERR, "%s(): check ser_busy_cnt: echo 18 > wed\n", __func__, ret);
+++			warp_dbg(WARP_DBG_ERR, "%s(): check ser_busy_cnt: echo 18 > wed\n", __func__);
++ 		}
++ #endif
++ 
++--- a/mcu/warp_ccif.c
+++++ b/mcu/warp_ccif.c
++@@ -84,7 +84,7 @@ static int ccif_init(struct woif_bus *bu
++ 	ccif->base_addr = of_iomap(node, idx);
++ 	ccif->irq = irq_of_parse_and_map(node, idx);
++ 
++-	warp_dbg(WARP_DBG_INF, "%s(): ccif: %p, addr: %lx, irq:%d!\n",
+++	warp_dbg(WARP_DBG_INF, "%s(): ccif: %p, addr: %p, irq:%d!\n",
++ 		__func__, ccif, ccif->base_addr, ccif->irq);
++ 
++ 	/*initial virtual ring*/
+diff --git a/package/mtk/drivers/warp/patches/007-3-fix-unused-variable-warning.patch b/package/mtk/drivers/warp/patches/007-3-fix-unused-variable-warning.patch
+new file mode 100644
+index 0000000000..3d36b8e992
+--- /dev/null
++++ b/package/mtk/drivers/warp/patches/007-3-fix-unused-variable-warning.patch
+@@ -0,0 +1,41 @@
++--- a/warp_main.c
+++++ b/warp_main.c
++@@ -1229,8 +1229,8 @@ warp_isr_handler(void *priv_data)
++ 		return;
++ 
++ 	wed = &warp->wed;
++-	struct wifi_entry *wifi = &warp->wifi;
++-	struct wifi_hw *hw = &wifi->hw;
+++	// struct wifi_entry *wifi = &warp->wifi;
+++	// struct wifi_hw *hw = &wifi->hw;
++ 
++ 	warp_eint_ctrl_hw(wed, false);
++ 	warp_eint_get_stat_hw(wed, &status);
++--- a/wed.c
+++++ b/wed.c
++@@ -566,8 +566,8 @@ int wed_release_rx_token(
++ {
++ 	int ret = -1;
++ 	struct warp_entry *warp = NULL;
++-	struct wifi_entry *wifi = NULL;
++-	struct wifi_ops *ops = NULL;
+++	// struct wifi_entry *wifi = NULL;
+++	// struct wifi_ops *ops = NULL;
++ 
++ 	if (wed) {
++ 		warp = (struct warp_entry *)wed->warp;
++--- a/warp_bm_v2.c
+++++ b/warp_bm_v2.c
++@@ -1161,9 +1161,9 @@ wed_rx_budget_ring_exit(
++ 	u32 ring_len,
++ 	struct warp_dma_buf *desc)
++ {
++-	struct wed_res_ctrl *res_ctrl = &wed->res_ctrl;
++-	struct wed_rx_ctrl *rx_ctrl = &res_ctrl->rx_ctrl;
++-	struct wed_rx_bm_res *extra_res = &rx_ctrl->extra;
+++	// struct wed_res_ctrl *res_ctrl = &wed->res_ctrl;
+++	// struct wed_rx_ctrl *rx_ctrl = &res_ctrl->rx_ctrl;
+++	// struct wed_rx_bm_res *extra_res = &rx_ctrl->extra;
++ 	u32 i;
++ 
++ 	for (i = 0; i < ring_len; i++)
+diff --git a/package/mtk/drivers/warp/patches/008-unify-FOE_MAGIC_WED2-to-hnat-defination.patch b/package/mtk/drivers/warp/patches/008-unify-FOE_MAGIC_WED2-to-hnat-defination.patch
+new file mode 100644
+index 0000000000..ed3494cc7a
+--- /dev/null
++++ b/package/mtk/drivers/warp/patches/008-unify-FOE_MAGIC_WED2-to-hnat-defination.patch
+@@ -0,0 +1,11 @@
++--- a/warp_wifi.c
+++++ b/warp_wifi.c
++@@ -87,7 +87,7 @@ void wifi_dump_skb(
++ 
++ #define FOE_MAGIC_WED0 0x78
++ #define FOE_MAGIC_WED1 0x79
++-#define FOE_MAGIC_WED2 0x87
+++#define FOE_MAGIC_WED2 0x7A
++ 
++ void
++ wifi_rx_tuple_add(struct wifi_entry *wifi, u8 idx, unsigned char *rx_info)
+-- 
+2.50.1 (Apple Git-155)
+

@@ -1,0 +1,99 @@
+From 2d4974b612bbef789849890bac0efd20d289710e Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Tue, 11 Nov 2025 23:47:24 +0800
+Subject: [PATCH 10/64] generic: add WEXT kconfig hack - this is critial for
+ `WIRELESS_EXT` build. wthout this, some kernel functions will be missing. -
+ also, add WEXT related config Signed-off-by: chasey-dev
+ <ellenyoung0912@gmail.com>
+
+---
+ target/linux/generic/config-6.6               | 10 ++--
+ .../hack-6.6/299-add-wext-kconfig.patch       | 53 +++++++++++++++++++
+ 2 files changed, 58 insertions(+), 5 deletions(-)
+ create mode 100644 target/linux/generic/hack-6.6/299-add-wext-kconfig.patch
+
+diff --git a/target/linux/generic/config-6.6 b/target/linux/generic/config-6.6
+index c00ae0fa0b..54c4b6c89f 100644
+--- a/target/linux/generic/config-6.6
++++ b/target/linux/generic/config-6.6
+@@ -7456,13 +7456,13 @@ CONFIG_WATCHDOG_OPEN_TIMEOUT=0
+ # CONFIG_WDAT_WDT is not set
+ # CONFIG_WDTPCI is not set
+ # CONFIG_WERROR is not set
+-# CONFIG_WEXT_CORE is not set
+-# CONFIG_WEXT_PRIV is not set
+-# CONFIG_WEXT_PROC is not set
+-# CONFIG_WEXT_SPY is not set
++CONFIG_WEXT_CORE=y
++CONFIG_WEXT_PRIV=y
++CONFIG_WEXT_PROC=y
++CONFIG_WEXT_SPY=y
+ # CONFIG_WIREGUARD is not set
+ CONFIG_WIRELESS=y
+-# CONFIG_WIRELESS_EXT is not set
++CONFIG_WIRELESS_EXT=y
+ # CONFIG_WIZNET_W5100 is not set
+ # CONFIG_WIZNET_W5300 is not set
+ # CONFIG_WL1251 is not set
+diff --git a/target/linux/generic/hack-6.6/299-add-wext-kconfig.patch b/target/linux/generic/hack-6.6/299-add-wext-kconfig.patch
+new file mode 100644
+index 0000000000..ff62e5df57
+--- /dev/null
++++ b/target/linux/generic/hack-6.6/299-add-wext-kconfig.patch
+@@ -0,0 +1,53 @@
++--- a/net/wireless/Kconfig
+++++ b/net/wireless/Kconfig
++@@ -1,6 +1,6 @@
++ # SPDX-License-Identifier: GPL-2.0-only
++ config WIRELESS_EXT
++-	bool
+++	bool "Wireless extensions"
++ 
++ config WEXT_CORE
++ 	def_bool y
++@@ -12,10 +12,10 @@ config WEXT_PROC
++ 	depends on WEXT_CORE
++ 
++ config WEXT_SPY
++-	bool
+++	bool "WEXT_SPY"
++ 
++ config WEXT_PRIV
++-	bool
+++	bool "WEXT_PRIV"
++ 
++ config CFG80211
++ 	tristate "cfg80211 - wireless configuration API"
++@@ -208,7 +208,7 @@ config CFG80211_WEXT_EXPORT
++ endif # CFG80211
++ 
++ config LIB80211
++-	tristate
+++	tristate "LIB80211"
++ 	default n
++ 	help
++ 	  This options enables a library of common routines used
++@@ -217,17 +217,17 @@ config LIB80211
++ 	  Drivers should select this themselves if needed.
++ 
++ config LIB80211_CRYPT_WEP
++-	tristate
+++	tristate "LIB80211_CRYPT_WEP"
++ 	select CRYPTO_LIB_ARC4
++ 
++ config LIB80211_CRYPT_CCMP
++-	tristate
+++	tristate "LIB80211_CRYPT_CCMP"
++ 	select CRYPTO
++ 	select CRYPTO_AES
++ 	select CRYPTO_CCM
++ 
++ config LIB80211_CRYPT_TKIP
++-	tristate
+++	tristate "LIB80211_CRYPT_TKIP"
++ 	select CRYPTO_LIB_ARC4
++ 
++ config LIB80211_DEBUG
+-- 
+2.50.1 (Apple Git-155)
+

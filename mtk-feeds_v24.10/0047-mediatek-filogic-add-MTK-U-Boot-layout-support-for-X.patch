@@ -1,0 +1,120 @@
+From e4bfb3f0ce96ee512b9d1721e360e81a315e69ff Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Wed, 26 Nov 2025 23:54:41 +0800
+Subject: [PATCH 47/64] mediatek: filogic: add MTK U-Boot layout support for
+ Xiaomi AX3000T NOTE: 1. choose "immortalwrt-112m" layout in mtk u-boot 2. DO
+ NOT sysupgrade to -stock (with no suffix) or -ubootmod version
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ defconfig/mt7981-ax3000.config                |  2 ++
+ .../uboot-envtools/files/mediatek_filogic     |  1 +
+ .../lib/preinit/05_set_preinit_iface          |  1 +
+ ...981b-xiaomi-mi-router-ax3000t-mtkuboot.dts | 23 +++++++++++++++++++
+ .../filogic/base-files/etc/board.d/02_network |  1 +
+ target/linux/mediatek/image/filogic-ext.mk    | 16 +++++++++++++
+ 6 files changed, 44 insertions(+)
+ create mode 100644 target/linux/mediatek/dts-ext/mt7981b-xiaomi-mi-router-ax3000t-mtkuboot.dts
+
+diff --git a/defconfig/mt7981-ax3000.config b/defconfig/mt7981-ax3000.config
+index 24933b6e08..cc828574d3 100644
+--- a/defconfig/mt7981-ax3000.config
++++ b/defconfig/mt7981-ax3000.config
+@@ -116,6 +116,8 @@ CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t-ubootmod=y
+ CONFIG_TARGET_DEVICE_PACKAGES_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t-ubootmod=""
+ CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t=y
+ CONFIG_TARGET_DEVICE_PACKAGES_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t=""
++CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t-mtkuboot=y
++CONFIG_TARGET_DEVICE_PACKAGES_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t-mtkuboot=""
+ CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_mi-router-wr30u-ubootmod=y
+ CONFIG_TARGET_DEVICE_PACKAGES_mediatek_filogic_DEVICE_xiaomi_mi-router-wr30u-ubootmod=""
+ CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_mi-router-wr30u-stock=y
+diff --git a/package/boot/uboot-envtools/files/mediatek_filogic b/package/boot/uboot-envtools/files/mediatek_filogic
+index 6766bba356..9ee13ca308 100644
+--- a/package/boot/uboot-envtools/files/mediatek_filogic
++++ b/package/boot/uboot-envtools/files/mediatek_filogic
+@@ -148,6 +148,7 @@ ubnt,unifi-6-plus)
+ 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x10000"
+ 	;;
+ xiaomi,mi-router-ax3000t|\
++xiaomi,mi-router-ax3000t-mtkuboot|\
+ xiaomi,mi-router-wr30u-stock|\
+ xiaomi,redmi-router-ax6000-stock)
+ 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x20000"
+diff --git a/target/linux/mediatek/base-files/lib/preinit/05_set_preinit_iface b/target/linux/mediatek/base-files/lib/preinit/05_set_preinit_iface
+index 5d8151741d..522ec62ab7 100644
+--- a/target/linux/mediatek/base-files/lib/preinit/05_set_preinit_iface
++++ b/target/linux/mediatek/base-files/lib/preinit/05_set_preinit_iface
+@@ -26,6 +26,7 @@ set_preinit_iface() {
+ 		;;
+ 	xiaomi,mi-router-ax3000t|\
+ 	xiaomi,mi-router-ax3000t-ubootmod|\
++	xiaomi,mi-router-ax3000t-mtkuboot|\
+ 	xiaomi,mi-router-wr30u-stock|\
+ 	xiaomi,mi-router-wr30u-ubootmod|\
+ 	xiaomi,redmi-router-ax6000-stock|\
+diff --git a/target/linux/mediatek/dts-ext/mt7981b-xiaomi-mi-router-ax3000t-mtkuboot.dts b/target/linux/mediatek/dts-ext/mt7981b-xiaomi-mi-router-ax3000t-mtkuboot.dts
+new file mode 100644
+index 0000000000..8b80bfae41
+--- /dev/null
++++ b/target/linux/mediatek/dts-ext/mt7981b-xiaomi-mi-router-ax3000t-mtkuboot.dts
+@@ -0,0 +1,23 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++/dts-v1/;
++#include "../dts/mt7981b-xiaomi-mi-router-ax3000t.dtsi"
++
++/ {
++	model = "Xiaomi Mi Router AX3000T (MTK U-Boot layout)";
++	compatible = "xiaomi,mi-router-ax3000t-mtkuboot", "mediatek,mt7981";
++};
++
++&spi_nand {
++	mediatek,nmbm;
++	mediatek,bmt-max-ratio = <1>;
++	mediatek,bmt-max-reserved-blocks = <64>;
++	mediatek,bmt-mtd-overridden-oobsize = <64>;
++};
++
++&partitions {
++	partition@600000 {
++		label = "ubi";
++		reg = <0x600000 0x7000000>;
++	};
++};
+diff --git a/target/linux/mediatek/filogic/base-files/etc/board.d/02_network b/target/linux/mediatek/filogic/base-files/etc/board.d/02_network
+index a68597457d..9038ee6255 100644
+--- a/target/linux/mediatek/filogic/base-files/etc/board.d/02_network
++++ b/target/linux/mediatek/filogic/base-files/etc/board.d/02_network
+@@ -152,6 +152,7 @@ mediatek_setup_interfaces()
+ 		;;
+ 	xiaomi,mi-router-ax3000t|\
+ 	xiaomi,mi-router-ax3000t-ubootmod|\
++	xiaomi,mi-router-ax3000t-mtkuboot|\
+ 	xiaomi,mi-router-wr30u-stock|\
+ 	xiaomi,mi-router-wr30u-ubootmod|\
+ 	xiaomi,redmi-router-ax6000-stock|\
+diff --git a/target/linux/mediatek/image/filogic-ext.mk b/target/linux/mediatek/image/filogic-ext.mk
+index e69de29bb2..a4f09c76fc 100644
+--- a/target/linux/mediatek/image/filogic-ext.mk
++++ b/target/linux/mediatek/image/filogic-ext.mk
+@@ -0,0 +1,16 @@
++define Device/xiaomi_mi-router-ax3000t-mtkuboot
++  DEVICE_VENDOR := Xiaomi
++  DEVICE_MODEL := Mi Router AX3000T
++  DEVICE_VARIANT := (MTK U-Boot layout)
++  DEVICE_DTS := mt7981b-xiaomi-mi-router-ax3000t-mtkuboot
++  DEVICE_DTS_DIR := ../dts-ext
++  UBINIZE_OPTS := -E 5
++  BLOCKSIZE := 128k
++  PAGESIZE := 2048
++  IMAGE_SIZE := 114688k
++  KERNEL_IN_UBI := 1
++  IMAGES += factory.bin
++  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
++  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
++endef
++TARGET_DEVICES += xiaomi_mi-router-ax3000t-mtkuboot
+-- 
+2.50.1 (Apple Git-155)
+

@@ -1,0 +1,79 @@
+From 2dfd736e3c83f3463fd1bf39a8136ea556c7c992 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Sat, 29 Nov 2025 15:47:13 +0800
+Subject: [PATCH 55/64] [][kernel-6.6][common][i2c][fix zts8232 driver
+ callbacks]
+
+[Description]
+Fix zts8232 driver callback functions, ex: zts8232_probe,
+zts8232_remove, due to the callback funciton prototype has changed.
+
+[Release-log]
+N/A
+
+Change-Id: I434c9be7217d29d74d9a82746028692eb63a5264
+Reviewed-on: https://gerrit.mediatek.inc/c/openwrt/feeds/mtk_openwrt_feeds/+/11407784
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../files-6.6/drivers/iio/pressure/zts8232.c       | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
+
+diff --git a/target/linux/mediatek/files-6.6/drivers/iio/pressure/zts8232.c b/target/linux/mediatek/files-6.6/drivers/iio/pressure/zts8232.c
+index 5850bc18db..bd49694f19 100644
+--- a/target/linux/mediatek/files-6.6/drivers/iio/pressure/zts8232.c
++++ b/target/linux/mediatek/files-6.6/drivers/iio/pressure/zts8232.c
+@@ -262,8 +262,8 @@ static int zts8232_config(struct zts8232_data *data, enum zts8232_op_mode op_mod
+ 			  enum zts8232_FIFO_readout_mode fifo_read_mode);
+ static void inv_run_zts8232_in_polling(struct zts8232_data *data, enum zts8232_op_mode op_mode,
+ 				       uint16_t odr_hz);
+-static int zts8232_probe(struct i2c_client *client, const struct i2c_device_id *id);
+-static int zts8232_remove(struct i2c_client *client);
++static int zts8232_probe(struct i2c_client *client);
++static void zts8232_remove(struct i2c_client *client);
+ 
+ static const struct iio_chan_spec zts8232_channels[] = {
+ 	{
+@@ -897,9 +897,7 @@ int zts8232_app_pre_start_config(struct zts8232_data *data, enum zts8232_op_mode
+ static void zts8232_app_warmup(struct zts8232_data *data, enum zts8232_op_mode op_mode,
+ 			       enum zts8232_meas_mode meas_mode)
+ {
+-	uint8_t fifo_packets = 0;
+ 	uint8_t fifo_packets_to_skip = 14;
+-	int status;
+ 	uint8_t pres_osr, temp_osr, HFOSC_on, DVDD_on, IIR_filter_en, FIR_filter_en, pres_bs,
+ 	    temp_bs;
+ 	uint16_t odr = 0, IIR_k = 0, press_gain = 0;
+@@ -1087,7 +1085,7 @@ static int zts8232_config(struct zts8232_data *data, enum zts8232_op_mode op_mod
+ static void inv_run_zts8232_in_polling(struct zts8232_data *data, enum zts8232_op_mode op_mode,
+ 				       uint16_t odr_hz)
+ {
+-	int status, temp;
++	int status;
+ 
+ 	status = zts8232_soft_reset(data);
+ 	if (status)
+@@ -1121,8 +1119,9 @@ static const struct iio_info zts8232_info = {
+ 	.write_raw = zts8232_write_raw,
+ };
+ 
+-static int zts8232_probe(struct i2c_client *client, const struct i2c_device_id *id)
++static int zts8232_probe(struct i2c_client *client)
+ {
++	const struct i2c_device_id *id = i2c_client_get_device_id(client);
+ 	struct zts8232_data *data;
+ 	struct iio_dev *iio;
+ 	int rc;
+@@ -1183,9 +1182,8 @@ error_free_device:
+ 	return rc;
+ }
+ 
+-static int zts8232_remove(struct i2c_client *client)
++static void zts8232_remove(struct i2c_client *client)
+ {
+-	return 0;
+ }
+ 
+ static const struct i2c_device_id zts8232_id[] = {{ZTS8232_DEV_NAME, 0}, {}};
+-- 
+2.50.1 (Apple Git-155)
+

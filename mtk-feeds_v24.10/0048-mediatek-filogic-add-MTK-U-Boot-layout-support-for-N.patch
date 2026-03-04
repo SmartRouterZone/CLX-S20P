@@ -1,0 +1,24 @@
+From 51c6699a04893ffe3f115c9e8d049bb426ce8089 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Thu, 27 Nov 2025 15:51:37 +0800
+Subject: [PATCH 48/64] mediatek: filogic: add MTK U-Boot layout support for
+ Netcore N60 Pro
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ target/linux/mediatek/filogic/base-files/etc/board.d/02_network | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/target/linux/mediatek/filogic/base-files/etc/board.d/02_network b/target/linux/mediatek/filogic/base-files/etc/board.d/02_network
+--- a/target/linux/mediatek/filogic/base-files/etc/board.d/02_network
++++ b/target/linux/mediatek/filogic/base-files/etc/board.d/02_network
+@@ -59,6 +59,7 @@ mediatek_setup_interfaces()
+ 	mediatek,mt7981-rfb|\
+ 	netcore,n60|\
+ 	netcore,n60-pro|\
++	netcore,n60-pro-mtkuboot|\
+ 	ruijie,rg-x60-pro|\
+ 	unielec,u7981-01*|\
+ 	zbtlink,zbt-z8102ax|\
+-- 
+2.50.1 (Apple Git-155)

@@ -1,0 +1,26 @@
+From 2a48bae3293f0bf5fb12de46d3651cc6f1045b55 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Sun, 23 Nov 2025 20:08:23 +0800
+Subject: [PATCH 33/64] base-files: set default log_size to 512k
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ package/base-files/files/bin/config_generate | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/package/base-files/files/bin/config_generate b/package/base-files/files/bin/config_generate
+index b32e19be7c..ecd6c41771 100755
+--- a/package/base-files/files/bin/config_generate
++++ b/package/base-files/files/bin/config_generate
+@@ -314,7 +314,7 @@ generate_static_system() {
+ 		set system.@system[-1].hostname='ImmortalWrt'
+ 		set system.@system[-1].timezone='UTC'
+ 		set system.@system[-1].ttylogin='0'
+-		set system.@system[-1].log_size='128'
++		set system.@system[-1].log_size='512'
+ 		set system.@system[-1].urandom_seed='0'
+ 
+ 		delete system.ntp
+-- 
+2.50.1 (Apple Git-155)
+

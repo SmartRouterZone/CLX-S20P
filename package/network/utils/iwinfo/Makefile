@@ -28,7 +28,7 @@ define Package/libiwinfo
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Generalized Wireless Information Library (iwinfo)
-  DEPENDS:=+libnl-tiny +libuci +libubus +libiwinfo-data
+  DEPENDS:=+libnl-tiny +libuci +libubus +libiwinfo-data +liblua
   ABI_VERSION:=$(IWINFO_ABI_VERSION)
 endef
 
@@ -82,7 +82,7 @@ MAKE_FLAGS += \
 	FPIC="$(FPIC)" \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
-	BACKENDS="nl80211" \
+	BACKENDS="nl80211 mtk" \
 	SOVERSION="$(IWINFO_ABI_VERSION)"
 
 define Build/InstallDev

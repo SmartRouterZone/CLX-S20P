@@ -1,0 +1,53 @@
+From 007f63a369d0224ba59ad13005c826746fa7dc72 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Sun, 23 Nov 2025 22:55:24 +0800
+Subject: [PATCH 35/64] autocore: add support for mtwifi tempinfo display
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ package/emortal/autocore/files/tempinfo | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/package/emortal/autocore/files/tempinfo b/package/emortal/autocore/files/tempinfo
+index c9fbd6d34e..6aad5834da 100755
+--- a/package/emortal/autocore/files/tempinfo
++++ b/package/emortal/autocore/files/tempinfo
+@@ -5,6 +5,25 @@
+ IEEE_PATH="/sys/class/ieee80211"
+ THERMAL_PATH="/sys/class/thermal"
+ 
++get_mtwifi_temp() {
++	local flag
++	local ifname
++	local temp
++	local mtwifi_vifs="ra0 rax0 rai0 ray0 rae0 raz0"
++	local result=""
++
++	for ifname in $mtwifi_vifs; do
++		if [ -f "/sys/class/net/${ifname}/flags" ]; then
++			flag="$(cat /sys/class/net/${ifname}/flags)"
++			if [ "$((flag & 0x1))" -eq "1" ]; then
++				temp="$(iwpriv ${ifname} stat | awk '/CurrentTemperature/ {printf("%d°C", $3)}')"
++				[ -z "$result" ] && result="${temp}" || result="${result}/${temp}"
++			fi
++		fi
++	done
++	echo ${result:-unknown}
++}
++
+ case "$DISTRIB_TARGET" in
+ ipq40xx/*|ipq806x/*)
+ 	wifi_temp="$(awk '{printf("%.1f°C ", $0 / 1000)}' "$IEEE_PATH"/phy*/device/hwmon/hwmon*/temp1_input 2>"/dev/null" | awk '$1=$1')"
+@@ -12,6 +31,9 @@ ipq40xx/*|ipq806x/*)
+ mediatek/mt7622)
+ 	wifi_temp="$(awk '{printf("%.1f°C ", $0 / 1000)}' "$IEEE_PATH"/wl*/hwmon*/temp1_input 2>"/dev/null" | awk '$1=$1')"
+ 	;;
++mediatek/filogic)
++	wifi_temp="$(get_mtwifi_temp)"
++	;;
+ *)
+ 	wifi_temp="$(awk '{printf("%.1f°C ", $0 / 1000)}' "$IEEE_PATH"/phy*/hwmon*/temp1_input 2>"/dev/null" | awk '$1=$1')"
+ 	;;
+-- 
+2.50.1 (Apple Git-155)
+

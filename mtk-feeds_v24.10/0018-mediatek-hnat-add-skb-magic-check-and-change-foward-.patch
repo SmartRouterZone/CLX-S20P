@@ -1,0 +1,41 @@
+From 4e0299a8a2a9db3e9332f0d2ff068ef63339a6c5 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Tue, 11 Nov 2025 23:52:31 +0800
+Subject: [PATCH 18/64] mediatek: hnat: add skb magic check and change foward
+ port in `mtk_eth_soc` - add `skb->magic` check and change forward port in
+ `mtk_eth_soc` - we dont need to remove reset and enable PSE, add Wifi SER
+ reset trigger or any stuff here. Since mtk_eth_reset.c has been added
+ upstream
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ ...h_soc-mtkhnat-add-hnat-skb-magic-check.patch | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+ create mode 100644 target/linux/mediatek/patches-6.6/999-2799-6-net-ethernet-mtk_eth_soc-mtkhnat-add-hnat-skb-magic-check.patch
+
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-6-net-ethernet-mtk_eth_soc-mtkhnat-add-hnat-skb-magic-check.patch b/target/linux/mediatek/patches-6.6/999-2799-6-net-ethernet-mtk_eth_soc-mtkhnat-add-hnat-skb-magic-check.patch
+new file mode 100644
+index 0000000000..ac5ada1b35
+--- /dev/null
++++ b/target/linux/mediatek/patches-6.6/999-2799-6-net-ethernet-mtk_eth_soc-mtkhnat-add-hnat-skb-magic-check.patch
+@@ -0,0 +1,17 @@
++--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++@@ -1908,6 +1908,13 @@ static int mtk_tx_map(struct sk_buff *sk
++ 	txd = itxd;
++ 	txd_pdma = qdma_to_pdma(ring, txd);
++ 
+++#if defined(CONFIG_NET_MEDIATEK_HNAT) || defined(CONFIG_NET_MEDIATEK_HNAT_MODULE)
+++	if (HNAT_SKB_CB2(skb)->magic == 0x78681415) {
+++		txd->txd4 &= ~(0xf << TX_DMA_FPORT_SHIFT_V2);
+++		txd->txd4 |= 0x4 << TX_DMA_FPORT_SHIFT_V2;
+++	}
+++#endif
+++
++ 	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
++ 		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
++ 		unsigned int offset = 0;
++
+-- 
+2.50.1 (Apple Git-155)
+

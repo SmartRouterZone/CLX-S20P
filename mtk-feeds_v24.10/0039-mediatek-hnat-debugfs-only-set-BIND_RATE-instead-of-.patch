@@ -1,0 +1,45 @@
+From 422ae8c54b67fd78bb1cebdbd44e245dc6a4ca91 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Tue, 25 Nov 2025 19:17:38 +0800
+Subject: [PATCH 39/64] mediatek: hnat: debugfs: only set BIND_RATE instead of
+ writel - since original `binding_threshold()` is using `writel()` to cover
+ whole `PPE_BNDR`, while we have no idea about upper bit is about, we only set
+ lower bit aka `BIND_RATE` for now. - also, we add illegal input check.
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ ...only-set-BIND_RATE-instead-of-writel.patch | 22 +++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+ create mode 100644 target/linux/mediatek/patches-6.6/999-2799-10-mtk-hnat-debugfs-only-set-BIND_RATE-instead-of-writel.patch
+
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-10-mtk-hnat-debugfs-only-set-BIND_RATE-instead-of-writel.patch b/target/linux/mediatek/patches-6.6/999-2799-10-mtk-hnat-debugfs-only-set-BIND_RATE-instead-of-writel.patch
+new file mode 100644
+index 0000000000..8b509183f6
+--- /dev/null
++++ b/target/linux/mediatek/patches-6.6/999-2799-10-mtk-hnat-debugfs-only-set-BIND_RATE-instead-of-writel.patch
+@@ -0,0 +1,22 @@
++--- a/drivers/net/ethernet/mediatek/mtk_hnat/hnat_debugfs.c
+++++ b/drivers/net/ethernet/mediatek/mtk_hnat/hnat_debugfs.c
++@@ -888,10 +888,18 @@ int binding_threshold(int threshold)
++ {
++ 	int i;
++ 
+++	/* check illegal input */
+++	if (threshold < 0 || threshold > 65535) {
+++		pr_err("current binding threshold =%d is forbidden! should be 0~65535\n", threshold);
+++		return 0;
+++	}
+++
++ 	pr_info("Binding Threshold =%d\n", threshold);
++ 
+++	/* only set lower bit here, since writel may cause unexpected behavior */
++ 	for (i = 0; i < CFG_PPE_NUM; i++)
++-		writel(threshold, hnat_priv->ppe_base[i] + PPE_BNDR);
+++		cr_set_field(hnat_priv->ppe_base[i] + PPE_BNDR,
+++			     BIND_RATE, threshold);
++ 
++ 	return 0;
++ }
+-- 
+2.50.1 (Apple Git-155)
+

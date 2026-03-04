@@ -1,0 +1,143 @@
+From cbc64d823e59d7d10ccbd210119933c33c4b9cbc Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Tue, 11 Nov 2025 23:45:06 +0800
+Subject: [PATCH 14/64] mediatek: hnat: fix setting `path->flags` with `BIT()`
+ The `net_device_path_type` enum defines sequential indices (0, 1, 2...), not
+ bitmasks. However, `path->flags` is used as a bitmap requiring correct bit
+ shifting. Without the `BIT()` macro, using enum values directly leads to
+ operating on the wrong bits. For instance, `DEV_PATH_VLAN` has the value 1.
+
+- Without `BIT()`: `path->flags |= DEV_PATH_VLAN` sets bit 0 (0x1), which actually corresponds to `DEV_PATH_ETHERNET`.
+- With `BIT()`: `path->flags |= BIT(DEV_PATH_VLAN)` correctly sets bit 1 (0x2).
+This mismatch causes flag collisions, where setting the VLAN flag incorrectly triggers Ethernet logic (or vice versa), and fails to set the intended VLAN status.
+
+This patch wraps the enum constants with `BIT()` to convert the indices to their corresponding bitmasks, ensuring the correct flags are checked and set.
+Without this patch, hnat driver may not work properly.
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ ...36-net-8021q-support-hardware-flow-table-offload.patch | 4 ++--
+ ...7-net-bridge-support-hardware-flow-table-offload.patch | 2 +-
+ ...38-net-pppoe-support-hardware-flow-table-offload.patch | 2 +-
+ ...2739-net-dsa-support-hardware-flow-table-offload.patch | 4 ++--
+ ...2741-mtkhnat-add-support-for-virtual-interface-a.patch | 8 ++++----
+ ...9-2742-mtkhnat-tnl-interface-offload-check.patch.patch | 4 ++--
+ 6 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/target/linux/mediatek/patches-6.6/999-2736-net-8021q-support-hardware-flow-table-offload.patch b/target/linux/mediatek/patches-6.6/999-2736-net-8021q-support-hardware-flow-table-offload.patch
+index 0c82482153..b8e235bed3 100644
+--- a/target/linux/mediatek/patches-6.6/999-2736-net-8021q-support-hardware-flow-table-offload.patch
++++ b/target/linux/mediatek/patches-6.6/999-2736-net-8021q-support-hardware-flow-table-offload.patch
+@@ -33,10 +33,10 @@ index d3e511e1e..0bf7af676 100644
+ +	struct net_device *dev = path->dev;
+ +	struct vlan_dev_priv *vlan = vlan_dev_priv(dev);
+ +
+-+	if (path->flags & DEV_PATH_VLAN)
+++	if (path->flags & BIT(DEV_PATH_VLAN))
+ +		return -EEXIST;
+ +
+-+	path->flags |= DEV_PATH_VLAN;
+++	path->flags |= BIT(DEV_PATH_VLAN);
+ +	path->vlan_proto = vlan->vlan_proto;
+ +	path->vlan_id = vlan->vlan_id;
+ +	path->dev = vlan->real_dev;
+diff --git a/target/linux/mediatek/patches-6.6/999-2737-net-bridge-support-hardware-flow-table-offload.patch b/target/linux/mediatek/patches-6.6/999-2737-net-bridge-support-hardware-flow-table-offload.patch
+index 6f7c6e45c3..127bb0ef47 100644
+--- a/target/linux/mediatek/patches-6.6/999-2737-net-bridge-support-hardware-flow-table-offload.patch
++++ b/target/linux/mediatek/patches-6.6/999-2737-net-bridge-support-hardware-flow-table-offload.patch
+@@ -33,7 +33,7 @@ index b82906fc9..a7232e4ad 100644
+ +	struct net_bridge *br = netdev_priv(dev);
+ +	struct net_bridge_fdb_entry *dst;
+ +
+-+	if (!(path->flags & DEV_PATH_ETHERNET))
+++	if (!(path->flags & BIT(DEV_PATH_ETHERNET)))
+ +		return -EINVAL;
+ +
+ +	dst = br_fdb_find_rcu(br, path->eth_dest, path->vlan_id);
+diff --git a/target/linux/mediatek/patches-6.6/999-2738-net-pppoe-support-hardware-flow-table-offload.patch b/target/linux/mediatek/patches-6.6/999-2738-net-pppoe-support-hardware-flow-table-offload.patch
+index b925e20011..adf1b80168 100644
+--- a/target/linux/mediatek/patches-6.6/999-2738-net-pppoe-support-hardware-flow-table-offload.patch
++++ b/target/linux/mediatek/patches-6.6/999-2738-net-pppoe-support-hardware-flow-table-offload.patch
+@@ -97,7 +97,7 @@ index ce2cbb590..f1dd314e6 100644
+ +		return -ENODEV;
+ +
+ +	path->dev = po->pppoe_dev;
+-+	path->flags |= DEV_PATH_PPPOE;
+++	path->flags |= BIT(DEV_PATH_PPPOE);
+ +	memcpy(path->eth_src, po->pppoe_dev->dev_addr, ETH_ALEN);
+ +	memcpy(path->eth_dest, po->pppoe_pa.remote, ETH_ALEN);
+ +	path->pppoe_sid = be16_to_cpu(po->num);
+diff --git a/target/linux/mediatek/patches-6.6/999-2739-net-dsa-support-hardware-flow-table-offload.patch b/target/linux/mediatek/patches-6.6/999-2739-net-dsa-support-hardware-flow-table-offload.patch
+index f775f94a0c..aeb4b0fa76 100644
+--- a/target/linux/mediatek/patches-6.6/999-2739-net-dsa-support-hardware-flow-table-offload.patch
++++ b/target/linux/mediatek/patches-6.6/999-2739-net-dsa-support-hardware-flow-table-offload.patch
+@@ -45,13 +45,13 @@ index 5fe075bf4..7e1357204 100644
+ +	struct net_device *dev = path->dev;
+ +	struct dsa_port *dp;
+ +
+-+	if (!(path->flags & DEV_PATH_ETHERNET))
+++	if (!(path->flags & BIT(DEV_PATH_ETHERNET)))
+ +		return -EINVAL;
+ +
+ +	dp = dsa_slave_to_port(dev);
+ +	path->dsa_port = dp->index;
+ +	path->dev = dsa_slave_to_master(dev);
+-+	path->flags |= DEV_PATH_DSA;
+++	path->flags |= BIT(DEV_PATH_DSA);
+ +
+ +	if (path->dev->netdev_ops->ndo_flow_offload_check)
+ +		return path->dev->netdev_ops->ndo_flow_offload_check(path);
+diff --git a/target/linux/mediatek/patches-6.6/999-2741-mtkhnat-add-support-for-virtual-interface-a.patch b/target/linux/mediatek/patches-6.6/999-2741-mtkhnat-add-support-for-virtual-interface-a.patch
+index 32c2c25fc7..c79b54a335 100644
+--- a/target/linux/mediatek/patches-6.6/999-2741-mtkhnat-add-support-for-virtual-interface-a.patch
++++ b/target/linux/mediatek/patches-6.6/999-2741-mtkhnat-add-support-for-virtual-interface-a.patch
+@@ -74,10 +74,10 @@ index b83031a12..23755b2a6 100644
+ +	struct net_device *dev = path->dev;
+ +	struct ip6_tnl *tnl = netdev_priv(dev);
+ +
+-+	if (path->flags & DEV_PATH_DSLITE)
+++	if (path->flags & BIT(DEV_PATH_DSLITE))
+ +		return -EEXIST;
+ +
+-+	path->flags |= DEV_PATH_DSLITE;
+++	path->flags |= BIT(DEV_PATH_DSLITE);
+ +	path->dev = tnl->dev;
+ +
+ +	return 0;
+@@ -123,10 +123,10 @@ index 3ffb6a5b1..442a30536 100644
+ +	struct net_device *dev = path->dev;
+ +	struct ip_tunnel *tnl = netdev_priv(dev);
+ +
+-+	if (path->flags & DEV_PATH_6RD)
+++	if (path->flags & BIT(DEV_PATH_6RD))
+ +		return -EEXIST;
+ +
+-+	path->flags |= DEV_PATH_6RD;
+++	path->flags |= BIT(DEV_PATH_6RD);
+ +	path->dev = tnl->dev;
+ +
+ +	return 0;
+diff --git a/target/linux/mediatek/patches-6.6/999-2742-mtkhnat-tnl-interface-offload-check.patch.patch b/target/linux/mediatek/patches-6.6/999-2742-mtkhnat-tnl-interface-offload-check.patch.patch
+index c13178f81c..b857519da6 100644
+--- a/target/linux/mediatek/patches-6.6/999-2742-mtkhnat-tnl-interface-offload-check.patch.patch
++++ b/target/linux/mediatek/patches-6.6/999-2742-mtkhnat-tnl-interface-offload-check.patch.patch
+@@ -60,14 +60,14 @@ index f011af660..18cd9fa14 100644
+ +	struct sock *sk = (struct sock *)chan->private;
+ +	struct l2tp_session *session;
+ +
+-+	if (path->flags & DEV_PATH_TNL)
+++	if (path->flags & BIT(DEV_PATH_TNL))
+ +		return -EEXIST;
+ +
+ +	session = pppol2tp_sock_to_session(sk);
+ +	if (!session)
+ +		return -EINVAL;
+ +
+-+	path->flags |= DEV_PATH_TNL;
+++	path->flags |= BIT(DEV_PATH_TNL);
+ +
+ +	return 0;
+ +}
+-- 
+2.50.1 (Apple Git-155)
+

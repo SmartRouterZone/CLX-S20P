@@ -1,0 +1,30 @@
+From 8ee5e17968036cd1679a7c3b29d1847d9d5ae553 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Mon, 27 Oct 2025 14:51:54 +0800
+Subject: [PATCH 09/64] mediatek: 02_network: sync changes from
+ mtk-openwrt-feeds
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../linux/mediatek/filogic/base-files/etc/board.d/02_network | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/target/linux/mediatek/filogic/base-files/etc/board.d/02_network b/target/linux/mediatek/filogic/base-files/etc/board.d/02_network
+index 3a7f4a8b20..a68597457d 100644
+--- a/target/linux/mediatek/filogic/base-files/etc/board.d/02_network
++++ b/target/linux/mediatek/filogic/base-files/etc/board.d/02_network
+@@ -195,6 +195,11 @@ mediatek_setup_macs()
+ 		lan_mac=$label_mac
+ 		wan_mac=$(macaddr_add "$lan_mac" 1)
+ 		;;
++	mediatek,mt7987*|\
++	mediatek,mt7988*)
++		lan_mac=$(mtd_get_mac_binary "Factory" "0xFFFF4")
++		wan_mac=$(mtd_get_mac_binary "Factory" "0xFFFFA")
++		;;	
+ 	mercusys,mr90x-v1|\
+ 	tplink,archer-ax80-v1|\
+ 	tplink,re6000xd)
+-- 
+2.50.1 (Apple Git-155)
+

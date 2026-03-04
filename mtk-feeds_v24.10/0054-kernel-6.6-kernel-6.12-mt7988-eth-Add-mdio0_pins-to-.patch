@@ -1,0 +1,41 @@
+From 8533f116792bf30b0d0e8c597e7306fe63f2ff92 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Fri, 28 Nov 2025 21:07:33 +0800
+Subject: [PATCH 54/64] [][kernel-6.6/kernel-6.12][mt7988][eth][Add mdio0_pins
+ to the mt7988a-rfb-eth1-an8831x DTSO]
+
+[Description]
+Add mdio0_pins to the mt7988a-rfb-eth1-an8831x DTSO.
+
+Without this patch, the Pinconf will not increase the MDIO driving
+strength when only the mt7988a-rfb-eth1-an8831x DTSO is overlaid.
+
+[Release-log]
+
+Change-Id: I36e6ef1a7332f42da48207840fb9e9c40a298dd7
+Reviewed-on: https://gerrit.mediatek.inc/c/openwrt/feeds/mtk_openwrt_feeds/+/11386859
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../arm64/boot/dts/mediatek/mt7988a-rfb-eth1-an8831x.dtso | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7988a-rfb-eth1-an8831x.dtso b/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7988a-rfb-eth1-an8831x.dtso
+index 6a1f44bd36..69924f74a5 100644
+--- a/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7988a-rfb-eth1-an8831x.dtso
++++ b/target/linux/mediatek/files-6.6/arch/arm64/boot/dts/mediatek/mt7988a-rfb-eth1-an8831x.dtso
+@@ -59,4 +59,12 @@
+ 			status = "okay";
+ 		};
+ 	};
++
++	fragment@2 {
++		target = <&eth>;
++		__overlay__ {
++			pinctrl-0 = <&mdio0_pins>;
++			pinctrl-names = "default";
++		};
++	};
+ };
+-- 
+2.50.1 (Apple Git-155)
+

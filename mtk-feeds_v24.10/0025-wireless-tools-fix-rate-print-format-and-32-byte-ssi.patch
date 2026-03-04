@@ -1,0 +1,93 @@
+From 683e2d920a0399f92bd0ca1a51265256321d5bd0 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Sat, 22 Nov 2025 17:04:09 +0800
+Subject: [PATCH 25/64] wireless-tools: fix rate print format and 32 byte ssid
+ showing
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ .../006-fix-iwconfig-rate-print-format.patch  | 45 +++++++++++++++++++
+ ...7-iwconfig_cannot_show_32_bytes_ssid.patch | 19 ++++++++
+ 2 files changed, 64 insertions(+)
+ create mode 100644 package/network/utils/wireless-tools/patches/006-fix-iwconfig-rate-print-format.patch
+ create mode 100644 package/network/utils/wireless-tools/patches/007-iwconfig_cannot_show_32_bytes_ssid.patch
+
+diff --git a/package/network/utils/wireless-tools/patches/006-fix-iwconfig-rate-print-format.patch b/package/network/utils/wireless-tools/patches/006-fix-iwconfig-rate-print-format.patch
+new file mode 100644
+index 0000000000..2a11adf0a1
+--- /dev/null
++++ b/package/network/utils/wireless-tools/patches/006-fix-iwconfig-rate-print-format.patch
+@@ -0,0 +1,45 @@
++Index: wireless_tools.29/iwlib.c
++===================================================================
++--- wireless_tools.29.orig/iwlib.c	2007-06-30 07:43:31.000000000 +0800
+++++ wireless_tools.29/iwlib.c	2020-09-25 15:35:01.105434143 +0800
++@@ -1129,7 +1129,7 @@ iw_channel_to_freq(int				channel,
++ void
++ iw_print_bitrate(char *	buffer,
++		 int	buflen,
++-		 int	bitrate)
+++		 unsigned long long	bitrate)
++ {
++   double	rate = bitrate;
++   char		scale;
++--- wireless_tools.29.orig/iwlib.h
+++++ wireless_tools.29.orig/iwlib.h
++@@ -346,7 +346,7 @@ int
++ void
++ 	iw_print_bitrate(char *	buffer,
++ 			 int	buflen,
++-			 int	bitrate);
+++			 unsigned long long	bitrate);
++ /* ---------------------- POWER SUBROUTINES ----------------------- */
++ int
++ 	iw_dbm2mwatt(int	in);
++--- wireless_tools.29.orig/wireless.21.h
+++++ wireless_tools.29.orig/wireless.21.h
++@@ -669,7 +669,7 @@
++  */
++ struct	iw_param
++ {
++-  __s32		value;		/* The value of the parameter itself */
+++  __u64		value;		/* The value of the parameter itself */
++   __u8		fixed;		/* Hardware should not use auto select */
++   __u8		disabled;	/* Disable the feature */
++   __u16		flags;		/* Various specifc flags (if any) */
++@@ -1005,7 +1005,7 @@ struct	iw_range
++ 
++ 	/* Rates */
++ 	__u8		num_bitrates;	/* Number of entries in the list */
++-	__s32		bitrate[IW_MAX_BITRATES];	/* list, in bps */
+++	__u64		bitrate[IW_MAX_BITRATES];	/* list, in bps */
++ 
++ 	/* RTS threshold */
++ 	__s32		min_rts;	/* Minimal RTS threshold */
++
+diff --git a/package/network/utils/wireless-tools/patches/007-iwconfig_cannot_show_32_bytes_ssid.patch b/package/network/utils/wireless-tools/patches/007-iwconfig_cannot_show_32_bytes_ssid.patch
+new file mode 100644
+index 0000000000..ba3320dc81
+--- /dev/null
++++ b/package/network/utils/wireless-tools/patches/007-iwconfig_cannot_show_32_bytes_ssid.patch
+@@ -0,0 +1,19 @@
++diff --git a/iwlib.c b/iwlib.c
++index 0afa8c1e..0a9d7259 100644
++--- a/iwlib.c
+++++ b/iwlib.c
++@@ -707,12 +707,13 @@ iw_get_basic_config(int			skfd,
++ 
++   /* Get ESSID */
++   wrq.u.essid.pointer = (caddr_t) info->essid;
++-  wrq.u.essid.length = IW_ESSID_MAX_SIZE + 1;
+++  wrq.u.essid.length = IW_ESSID_MAX_SIZE;
++   wrq.u.essid.flags = 0;
++   if(iw_get_ext(skfd, ifname, SIOCGIWESSID, &wrq) >= 0)
++     {
++       info->has_essid = 1;
++       info->essid_on = wrq.u.data.flags;
+++      info->essid[IW_ESSID_MAX_SIZE] = '\0';
++     }
++ 
++   /* Get operation mode */
+-- 
+2.50.1 (Apple Git-155)
+

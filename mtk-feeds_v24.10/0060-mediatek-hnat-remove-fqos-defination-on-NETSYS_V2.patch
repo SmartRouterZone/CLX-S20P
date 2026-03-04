@@ -1,0 +1,38 @@
+From ef0d5a05b4dae2a959671827f5608daaf2f05582 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Sat, 29 Nov 2025 13:56:46 +0800
+Subject: [PATCH 60/64] mediatek: hnat: remove fqos defination on NETSYS_V2 -
+ there is a build failure on NETSYS_V2 with newly introduced patch from
+ upstream drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c:2711:13:
+ error: unused variable 'fqos' [-Werror=unused-variable]  2711 |         u32
+ fqos = (IS_HQOS_DL_MODE && skb->mark);       |             ^~~~
+
+we add a NETSYS_V3 check before fqos defination
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ ...k-hnat-fix-fqos-define-with-NETSYS_V3-check.patch | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+ create mode 100644 target/linux/mediatek/patches-6.6/999-5106-mtk-hnat-fix-fqos-define-with-NETSYS_V3-check.patch
+
+diff --git a/target/linux/mediatek/patches-6.6/999-5106-mtk-hnat-fix-fqos-define-with-NETSYS_V3-check.patch b/target/linux/mediatek/patches-6.6/999-5106-mtk-hnat-fix-fqos-define-with-NETSYS_V3-check.patch
+new file mode 100644
+index 0000000000..1002329b19
+--- /dev/null
++++ b/target/linux/mediatek/patches-6.6/999-5106-mtk-hnat-fix-fqos-define-with-NETSYS_V3-check.patch
+@@ -0,0 +1,12 @@
++--- a/drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c
+++++ b/drivers/net/ethernet/mediatek/mtk_hnat/hnat_nf_hook.c
++@@ -2708,7 +2708,9 @@ int mtk_sw_nat_hook_tx(struct sk_buff *skb, int gmac_no)
++ 	struct hnat_flow_entry *flow_entry;
++ 	struct ethhdr *eth;
++ 	struct nf_conn *ct;
+++#if defined(CONFIG_MEDIATEK_NETSYS_V3)
++ 	u32 fqos = (IS_HQOS_DL_MODE && skb->mark);
+++#endif
++ 	enum ip_conntrack_info ctinfo;
++ 
++ 	if (!skb_hnat_is_hashed(skb) || skb_hnat_ppe(skb) >= CFG_PPE_NUM)
+-- 
+2.50.1 (Apple Git-155)
+

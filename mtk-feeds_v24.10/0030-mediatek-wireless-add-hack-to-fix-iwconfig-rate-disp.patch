@@ -1,0 +1,56 @@
+From 4cea8ff2c1ab06bf7fe9a40c10be3cebd7e39013 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Sun, 23 Nov 2025 21:49:34 +0800
+Subject: [PATCH 30/64] mediatek: wireless: add hack to fix iwconfig rate
+ display overflow This is a hack to fix iwconfig rate display. Without this,
+ iwconfig will report wrong wireless rate. We are not sure whether this
+ introduces bugs to kernel, but keep it as a workaround.
+
+in `struct iw_param` :
+- change `value` from `__s32` to `__u64`
+- change `bitrate` from `__s32` to `__u64`
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ ...99-2799-7-iwconfig-wireless-rate-fix.patch | 29 +++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+ create mode 100644 target/linux/mediatek/patches-6.6/999-2799-7-iwconfig-wireless-rate-fix.patch
+
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-7-iwconfig-wireless-rate-fix.patch b/target/linux/mediatek/patches-6.6/999-2799-7-iwconfig-wireless-rate-fix.patch
+new file mode 100644
+index 0000000000..b8a12e124c
+--- /dev/null
++++ b/target/linux/mediatek/patches-6.6/999-2799-7-iwconfig-wireless-rate-fix.patch
+@@ -0,0 +1,29 @@
++From 572be3e7a2e9f41c64dd6c8c89cc763b97ecab6c Mon Sep 17 00:00:00 2001
++From: Sam Shih <sam.shih@mediatek.com>
++Date: Fri, 2 Jun 2023 13:06:33 +0800
++Subject: [PATCH] [networking][999-2725-iwconfig-wireless-rate-fix.patch]
++
++---
++ include/uapi/linux/wireless.h | 4 ++--
++ 1 file changed, 2 insertions(+), 2 deletions(-)
++
++--- a/include/uapi/linux/wireless.h
+++++ b/include/uapi/linux/wireless.h
++@@ -678,7 +678,7 @@
++  *	Generic format for most parameters that fit in an int
++  */
++ struct iw_param {
++-  __s32		value;		/* The value of the parameter itself */
+++  __u64		value;		/* The value of the parameter itself */
++   __u8		fixed;		/* Hardware should not use auto select */
++   __u8		disabled;	/* Disable the feature */
++   __u16		flags;		/* Various specifc flags (if any) */
++@@ -1002,7 +1002,7 @@ struct iw_range {
++ 
++ 	/* Rates */
++ 	__u8		num_bitrates;	/* Number of entries in the list */
++-	__s32		bitrate[IW_MAX_BITRATES];	/* list, in bps */
+++	__u64		bitrate[IW_MAX_BITRATES];	/* list, in bps */
++ 
++ 	/* RTS threshold */
++ 	__s32		min_rts;	/* Minimal RTS threshold */
+-- 
+2.50.1 (Apple Git-155)
+

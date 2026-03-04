@@ -1,0 +1,47 @@
+From ad4f57c6d9ca5f30610009ae2e0acc19d54cd594 Mon Sep 17 00:00:00 2001
+From: chasey-dev <ellenyoung0912@gmail.com>
+Date: Fri, 21 Nov 2025 20:50:15 +0800
+Subject: [PATCH 15/64] mediatek: hnat: fix foe_entry struct size mismatch on
+ NETSYS_V2 On NETSYS_V2 platforms (e.g., MT7986/Filogic 830), the HNAT driver
+ failed to bind flows. The root cause is a mismatch between the software
+ structure definition and the hardware configuration:
+
+ **Size Mismatch**: The `struct foe_entry` was defined with `u32 data[31]`, resulting in a total size of 128 bytes. However, `hnat_hw_init` configures the PPE hardware to use 96-byte entries (`ENTRY_96B`) for NETSYS_V2. This alignment error caused the CPU to access incorrect memory offsets when indexing the FOE table, reading INVALID (0) states instead of UNBIND (1), preventing any flow binding.
+
+This patch fixes both issues by:
+Adjusting the padding array to `u32 data[23]` for non-V3 platforms.
+Calculation: 4 bytes (header) + 23 * 4 bytes (data) = 96 bytes.
+This aligns the software structure with the hardware's 96-byte mode.
+
+Signed-off-by: chasey-dev <ellenyoung0912@gmail.com>
+---
+ ...foe-entry-struct-mismatch-on-NETSYS_V2.patch | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+ create mode 100644 target/linux/mediatek/patches-6.6/999-2799-5-mtk-hnat-fix-foe-entry-struct-mismatch-on-NETSYS_V2.patch
+
+diff --git a/target/linux/mediatek/patches-6.6/999-2799-5-mtk-hnat-fix-foe-entry-struct-mismatch-on-NETSYS_V2.patch b/target/linux/mediatek/patches-6.6/999-2799-5-mtk-hnat-fix-foe-entry-struct-mismatch-on-NETSYS_V2.patch
+new file mode 100644
+index 0000000000..fd26d870ba
+--- /dev/null
++++ b/target/linux/mediatek/patches-6.6/999-2799-5-mtk-hnat-fix-foe-entry-struct-mismatch-on-NETSYS_V2.patch
+@@ -0,0 +1,17 @@
++--- a/drivers/net/ethernet/mediatek/mtk_hnat/hnat.h
+++++ b/drivers/net/ethernet/mediatek/mtk_hnat/hnat.h
++@@ -862,7 +862,13 @@ struct foe_entry {
++ 		struct hnat_ipv6_5t_route ipv6_5t_route;
++ 		struct hnat_ipv6_6rd ipv6_6rd;
++ 		struct hnat_ipv6_hnapt ipv6_hnapt;
++-		u32 data[31];
+++#if defined(CONFIG_MEDIATEK_NETSYS_V3)
+++		/* 4 + 31 * 4 = 128 Bytes for NETSYS_V3 */
+++        u32 data[31];
+++#else
+++		/* 4 + 23 * 4 = 96 Bytes for NETSYS_V2 */
+++        u32 data[23];
+++#endif
++ 	};
++ };
++ 
+-- 
+2.50.1 (Apple Git-155)
+
