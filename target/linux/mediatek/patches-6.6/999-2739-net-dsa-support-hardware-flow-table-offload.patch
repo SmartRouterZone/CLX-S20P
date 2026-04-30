@@ -45,7 +45,7 @@ index 5fe075bf4..7e1357204 100644
 +	struct net_device *dev = path->dev;
 +	struct dsa_port *dp;
 +
-+	if (!(path->flags & BIT(DEV_PATH_ETHERNET)))
++	if (!(path->flags & DEV_PATH_ETHERNET))
 +		return -EINVAL;
 +
 +	dp = dsa_slave_to_port(dev);
