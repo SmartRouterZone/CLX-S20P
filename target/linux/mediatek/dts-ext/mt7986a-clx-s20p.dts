@@ -9,7 +9,7 @@
 
 / {
 	model = "CLX S20P";
-	compatible = "clx,s20p", "mediatek,mt7986a";
+	compatible = "clx,s20p", "mediatek,mt7986a-rfb";
 
 	aliases {
 		serial0 = &uart0;
@@ -361,7 +361,7 @@
 		mux {
 			function = "wifi";
 			groups = "wf_dbdc";
-	};
+		};
 		conf {
 			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
 				"WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",

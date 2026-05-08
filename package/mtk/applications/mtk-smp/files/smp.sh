@@ -680,6 +680,13 @@ scan_usbnet()
 			IS_USBNET=1
 			return
 		fi
+
+		# filter when ethX is GMAC
+		if [ "$dev_prefix" = "eth" ] &&
+		   ! grep -q "mediatek,eth-mac" "/sys/class/net/${dev_name}/of_node/compatible" 2>/dev/null; then
+			IS_USBNET=1
+			return
+		fi
 	done
 }
 
@@ -741,6 +748,7 @@ setup_model()
 	asus,tuf-ax4200 |\
 	asus,tuf-ax6000 |\
 	bananapi,bpi-r3* |\
+	clx,s20p |\
 	dlink,aquila-pro-ai-m60-a1 |\
 	glinet,gl-mt6000 |\
 	jdcloud,re-cp-03 |\
