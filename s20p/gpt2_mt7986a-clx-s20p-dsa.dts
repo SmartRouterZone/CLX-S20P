@@ -1,0 +1,457 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "mt7986a.dtsi"
+#include "mt7986a-pinctrl.dtsi"
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/* 
+ * 基于"mmcblk0p4_kernel"提取反编译_20260327
+ * 存在问题: 2.5G获取不到IP
+*/
+
+
+/ {
+	model = "CLX S20P";
+	compatible = "clx,s20p-dsa", "mediatek,mt7986a-emmc-rfb";
+
+	aliases {
+		serial0 = &uart0;
+
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+
+		/* 可选：让 OpenWrt 用 gmac0 做 label-mac-device */
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n1 loglevel=8 \
+			    earlycon=uart8250,mmio32,0x11002000 \
+			    root=PARTLABEL=rootfs rootwait rootfstype=squashfs,f2fs";
+	};
+
+	memory {
+		reg = <0 0x40000000 0 0x80000000>; /* 2GiB */
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 16 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led_wlan5g {
+			label = "wlan5g";
+			gpios = <&pio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan2g {
+			label = "wlan2g";
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led_sys: led_sys {
+			label = "sys";
+			gpios = <&pio 22 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	reg_1p8v: regulator-1p8v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-1.8V";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	/* 按你“原 dts”：GPIO24 控 USB VBUS，高电平使能 */
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&pio 24 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
+};
+
+/* 串口/看门狗 */
+&uart0 { status = "okay"; };
+&watchdog { status = "okay"; };
+
+/* USB */
+&xhci {
+	vbus-supply = <&usb_vbus>;
+	status = "okay";
+};
+
+/* PCIe */
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_pins>;
+	status = "okay";
+};
+
+/* eMMC：开启 + pinctrl + 供电 + 分区 nvmem（EEPROM/MAC） */
+&mmc0 {
+	pinctrl-names = "default", "state_uhs";
+	pinctrl-0 = <&mmc0_pins_default>;
+	pinctrl-1 = <&mmc0_pins_uhs>;
+
+	bus-width = <8>;
+	max-frequency = <200000000>;
+	cap-mmc-highspeed;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	hs400-ds-delay = <0x14014>;
+
+	vmmc-supply = <&reg_3p3v>;
+	vqmmc-supply = <&reg_1p8v>;
+
+	non-removable;
+	no-sd;
+	no-sdio;
+
+	status = "okay";
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+
+			partitions {
+				block-partition-env {
+					partname = "u-boot-env";
+
+					nvmem-layout {
+						compatible = "u-boot,env";
+					};
+				};
+
+				block-partition-factory {
+					partname = "factory";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						eeprom_factory: eeprom@0 {
+							reg = <0x0 0x1000>;
+						};
+
+						/* 你的原 dts：0x24/0x2a 两个 mac-base */
+						macaddr_factory_24: macaddr@24 {
+							compatible = "mac-base";
+							reg = <0x24 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
+
+						macaddr_factory_2a: macaddr@2a {
+							compatible = "mac-base";
+							reg = <0x2a 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
+			};
+		};
+	};
+};
+
+/* Wi-Fi：用 factory eeprom + 从 macaddr@2a 派生（与你“原 dts”一致） */
+&wbsys {
+	pinctrl-names = "default", "dbdc";
+	pinctrl-0 = <&wf_2g_5g_pins>;
+	pinctrl-1 = <&wf_dbdc_pins>;
+	status = "okay";
+
+	nvmem-cells = <&eeprom_factory>;
+	nvmem-cell-names = "eeprom";
+
+	band@0 {
+		reg = <0>;
+		nvmem-cells = <&macaddr_factory_2a 2>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_factory_2a 3>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+/*
+ * 以太网 + DSA
+ * - 你确认：gmac1 + phy@7 => eth1（WAN）
+ * - 你确认：lan6（phy@5）=> 2.5G LAN
+ * - CPU 口用 gmac0 2500base-x fixed-link（对齐你原 dts）
+ */
+&eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+
+		/* gmac0 从 macaddr@2a[0] 取基地址 */
+		nvmem-cells = <&macaddr_factory_2a 0>;
+		nvmem-cell-names = "mac-address";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	/* eth1：外置 2.5G PHY@7 */
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy7>;
+
+		/* gmac1 从 macaddr@24[0] 取 */
+		nvmem-cells = <&macaddr_factory_24 0>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* 2.5G LAN PHY：phy@5（lan6） */
+		phy5: ethernet-phy@5 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <5>;
+
+			reset-gpios = <&pio 48 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <100000>;
+			reset-deassert-us = <100000>;
+			interrupt-parent = <&pio>;
+			interrupts = <47 IRQ_TYPE_LEVEL_LOW>;
+			realtek,aldps-enable;
+			realtek,led-link-select = <0xa7 0x03 0x00>;
+			realtek,led-act-select = <0x321b>;
+		};
+
+		/* 2.5G WAN PHY：phy@7（eth1） */
+		phy7: ethernet-phy-ieee802.3-c45@7 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <7>;
+
+			reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <100000>;
+			reset-deassert-us = <100000>;
+			interrupt-parent = <&pio>;
+			interrupts = <46 IRQ_TYPE_LEVEL_LOW>;
+			realtek,aldps-enable;
+			realtek,led-link-select = <0xa7 0x03 0x00>;
+			realtek,led-act-select = <0x321b>;
+		};
+
+		/* MT7531：DSA switch（reg=31 == 0x1f） */
+		switch@1f {
+			compatible = "mediatek,mt7531";
+			reg = <31>;
+			reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupt-parent = <&pio>;
+			interrupts = <66 IRQ_TYPE_LEVEL_HIGH>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 { reg = <0>; label = "lan5"; };
+				port@1 { reg = <1>; label = "lan4"; };
+				port@2 { reg = <2>; label = "lan3"; };
+				port@3 { reg = <3>; label = "lan2"; };
+				port@4 { reg = <4>; label = "lan1"; };
+
+				/* lan6 绑定 phy@5（你的确认点） */
+				port@5 {
+					reg = <5>;
+					label = "lan6";
+					phy-mode = "2500base-x";
+					phy-handle = <&phy5>;
+				};
+
+				/* CPU 口接 gmac0 */
+				port@6 {
+					reg = <6>;
+					label = "cpu";
+					ethernet = <&gmac0>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+						pause;
+					};
+				};
+			};
+		};
+	};
+};
+
+/* HNAT：保持你参考稿的写法 */
+&hnat {
+	mtketh-wan = "eth1";
+	mtketh-lan = "lan";
+	mtketh-max-gmac = <2>;
+	ext-devices-prefix = "usb", "wwan";
+	ext-devices = "wwan0_0","wwan0_1","wwan0.1","wwan0.2";
+	status = "okay";
+};
+
+/*
+ * WED：你这份 mt7986a.dtsi 已经有 wed/wed2，并且 reserved-memory 也已提供：
+ * - wocpu0_emi @4FD00000
+ * - wocpu1_emi @4FD40000
+ * - wocpu_data @4FD80000 (shared=1)
+ * 这里仅做 memory-region 绑定，避免你之前那套“wo_emi0/wo_data”重复 label 的坑。
+ */
+&wed {
+	status = "okay";
+	memory-region = <&wocpu0_emi &wocpu_data>;
+	memory-region-names = "wo-emi", "wo-data";
+};
+
+&wed2 {
+	status = "okay";
+	memory-region = <&wocpu1_emi &wocpu_data>;
+	memory-region-names = "wo-emi", "wo-data";
+};
+
+/* pinctrl：尽量用纯数字 drive-strength，规避宏展开差异 */
+&pio {
+	mmc0_pins_default: mmc0-pins-default {
+		mux {
+			function = "flash";
+			groups = "emmc_51";
+		};
+
+		conf-cmd-dat {
+			pins = "EMMC_DATA_0", "EMMC_DATA_1", "EMMC_DATA_2",
+			       "EMMC_DATA_3", "EMMC_DATA_4", "EMMC_DATA_5",
+			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
+			input-enable;
+			drive-strength = <4>;
+			mediatek,pull-up-adv = <1>;
+		};
+
+		conf-clk {
+			pins = "EMMC_CK";
+			drive-strength = <6>;
+			mediatek,pull-down-adv = <2>;
+		};
+
+		conf-ds {
+			pins = "EMMC_DSL";
+			mediatek,pull-down-adv = <2>;
+		};
+
+		conf-rst {
+			pins = "EMMC_RSTB";
+			drive-strength = <4>;
+			mediatek,pull-up-adv = <1>;
+		};
+	};
+
+	mmc0_pins_uhs: mmc0-uhs-pins {
+		mux {
+			function = "flash";
+			groups = "emmc_51";
+		};
+
+		conf-cmd-dat {
+			pins = "EMMC_DATA_0", "EMMC_DATA_1", "EMMC_DATA_2",
+			       "EMMC_DATA_3", "EMMC_DATA_4", "EMMC_DATA_5",
+			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
+			input-enable;
+			drive-strength = <4>;
+			mediatek,pull-up-adv = <1>;
+		};
+
+		conf-clk {
+			pins = "EMMC_CK";
+			drive-strength = <6>;
+			mediatek,pull-down-adv = <2>;
+		};
+
+		conf-ds {
+			pins = "EMMC_DSL";
+			mediatek,pull-down-adv = <2>;
+		};
+
+		conf-rst {
+			pins = "EMMC_RSTB";
+			drive-strength = <4>;
+			mediatek,pull-up-adv = <1>;
+		};
+	};
+
+	wf_2g_5g_pins: wf_2g_5g-pins {
+		mux {
+			function = "wifi";
+			groups = "wf_2g", "wf_5g";
+		};
+		conf {
+			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+			       "WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+			       "WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <4>;
+		};
+	};
+
+	wf_dbdc_pins: wf_dbdc-pins {
+		mux {
+			function = "wifi";
+			groups = "wf_dbdc";
+		};
+		conf {
+			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+			       "WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+			       "WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <4>;
+		};
+	};
+};

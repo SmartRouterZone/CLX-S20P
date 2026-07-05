@@ -22,9 +22,9 @@ uci -q commit wireless
 
 # --- modify if luci.diag section exists ---
 if uci -q get luci.diag >/dev/null; then
-	uci -q set luci.diag.dns='ipw.cn'
-	uci -q set luci.diag.ping='ipw.cn'
-	uci -q set luci.diag.route='ipw.cn'
+	uci -q set luci.diag.dns='itdog.cn'
+	uci -q set luci.diag.ping='itdog.cn'
+	uci -q set luci.diag.route='itdog.cn'
 	uci -q commit luci
 fi
 

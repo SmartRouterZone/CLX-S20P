@@ -6,10 +6,9 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 
-/*
+/* 
  * 基于"device_tree.dts.txt"gpt5.4适配_20260328
  * 存在问题: 2.5G获取不到IP
- * 型号: RTL8221B-VB-CG
 */
 
 / {
@@ -229,7 +228,6 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
-		ext-phy-reg = <5>;
 		nvmem-cells = <&macaddr_factory_2a 0>;
 		nvmem-cell-names = "mac-address";
 
@@ -244,7 +242,6 @@
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
-		ext-phy-reg = <7>;
 		phy-handle = <&phy7>;
 		nvmem-cells = <&macaddr_factory_24 0>;
 		nvmem-cell-names = "mac-address";
@@ -258,34 +255,65 @@
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <5>;
 			reset-gpios = <&pio 48 GPIO_ACTIVE_LOW>;
-			reset-assert-us = <600>;
-			reset-deassert-us = <20000>;
-			phy-mode = "2500base-x";
+			reset-assert-us = <100000>;
+			reset-deassert-us = <100000>;
+			interrupt-parent = <&pio>;
+			interrupts = <47 IRQ_TYPE_LEVEL_LOW>;
+			realtek,aldps-enable;
+			realtek,led-link-select = <0xa7 0x03 0x00>;
+			realtek,led-act-select = <0x321b>;
 		};
 
 		phy7: ethernet-phy@7 {
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <7>;
 			reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
-			reset-assert-us = <600>;
-			reset-deassert-us = <20000>;
-			phy-mode = "2500base-x";
+			reset-assert-us = <100000>;
+			reset-deassert-us = <100000>;
+			interrupt-parent = <&pio>;
+			interrupts = <46 IRQ_TYPE_LEVEL_LOW>;
+			realtek,aldps-enable;
+			realtek,led-link-select = <0xa7 0x03 0x00>;
+			realtek,led-act-select = <0x321b>;
 		};
 
 		switch@0 {
 			compatible = "mediatek,mt7531";
 			reg = <31>;
 			reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupt-parent = <&pio>;
+			interrupts = <66 IRQ_TYPE_LEVEL_HIGH>;
 
 			ports {
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				port@0 { reg = <0>; label = "lan5"; };
-				port@1 { reg = <1>; label = "lan4"; };
-				port@2 { reg = <2>; label = "lan3"; };
-				port@3 { reg = <3>; label = "lan2"; };
-				port@4 { reg = <4>; label = "lan1"; };
+				port@0 {
+					reg = <0>;
+					label = "lan5";
+				};
+
+				port@1 {
+					reg = <1>;
+					label = "lan4";
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "lan3";
+				};
+
+				port@3 {
+					reg = <3>;
+					label = "lan2";
+				};
+
+				port@4 {
+					reg = <4>;
+					label = "lan1";
+				};
 
 				port@5 {
 					reg = <5>;

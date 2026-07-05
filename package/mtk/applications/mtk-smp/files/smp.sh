@@ -680,6 +680,13 @@ scan_usbnet()
 			IS_USBNET=1
 			return
 		fi
+	
+		# filter when ethX is GMAC
+		if [ "$dev_prefix" = "eth" ] &&
+		   ! grep -q "mediatek,eth-mac" "/sys/class/net/${dev_name}/of_node/compatible" 2>/dev/null; then
+			IS_USBNET=1
+			return
+		fi
 	done
 }
 

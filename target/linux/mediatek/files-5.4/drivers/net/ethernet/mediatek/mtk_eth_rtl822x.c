@@ -32,6 +32,12 @@
 #include "rtl822x/rtl_adapter.h"
 #include "rtl822x/rtl8226_typedef.h"
 #include "rtl822x/nic_rtl8226b_init.h"
+
+#define RTL822X_PHY_ID		0x001cc840
+#define RTL822X_PHY_ID_MASK	0xfffffff0
+#define RTL8221B_VB_CG_PHY_ID	0x001cc849
+#define RTL8221B_VN_CG_PHY_ID	0x001cc84a
+
 static struct mtk_eth *sg_eth;
 
 int mtk_mii_rw(struct mtk_eth *eth, int phy, int reg, u16 data,
@@ -141,8 +147,6 @@ void mtk_soc_mmd_write(int phyad, int devad, int regad, int val)
 static int rtl822x_init(struct mtk_eth *eth, int addr)
 {
 	u32 val;
-	struct device_node *np1;
-	struct device_node *np2;
 
 	val = mtk_mmd_read(eth, addr, 30, 0x75F3);
 	val &= ~(1 << 0);
@@ -160,32 +164,18 @@ static int rtl822x_init(struct mtk_eth *eth, int addr)
 	val |= (1 << 9);
 	mtk_mmd_write(eth, addr, 7, 0, val);
 
-	msleep(500);
+    msleep(500);
 
-	np1 = of_find_compatible_node(NULL, NULL, "clx,s20p-dsa");
-	np2 = of_find_compatible_node(NULL, NULL, "clx,s20p-gsw");
-	if ( np1 || np2 ) {
-		// led0 at 10/100/1000/2.5G
-		mtk_mmd_write(eth, addr, 31, 0xd032, 0x0027);
-		// led1 at 10/100
-		mtk_mmd_write(eth, addr, 31, 0xd034, 0x0003);
-		// led on time = 400ms, duty = 12.5%, freq = 60ms, Enable 10M LPI, modeA, act
-		mtk_mmd_write(eth, addr, 31, 0xd040, 0x321f);
-		// all led enable, polar = low
-		//mtk_mmd_write(eth, addr, 31, 0xd044, 0xf8);
-	}
-	else {
-		// led0 at 10/100/1000/2.5G
-		mtk_mmd_write(eth, addr, 31, 0xd032, 0x0027);
-		// led on time = 400ms, duty = 12.5%, freq = 60ms, Enable 10M LPI, modeA, act
-		mtk_mmd_write(eth, addr, 31, 0xd040, 0x321f);
-		// all led enable, polar = low
-		mtk_mmd_write(eth, addr, 31, 0xd044, 0xf8);
-	}
+	// led0 at 10/100/1000/2.5G
+	mtk_mmd_write(eth, addr, 31, 0xd032, 0x0027);
+	// led on time = 400ms, duty = 12.5%, freq = 60ms, Enable 10M LPI, modeA, act
+	mtk_mmd_write(eth, addr, 31, 0xd040, 0x321f);
+	// all led enable, polar = low
+	mtk_mmd_write(eth, addr, 31, 0xd044, 0xf8);
 
 	msleep(500);
 
-	dev_info(eth->dev, "RTL822x init success!\n");
+	dev_info(eth->dev, "RTL822x init success at phy addr %d!\n", addr);
 
 	Rtl8226b_phy_init((HANDLE){eth, addr}, NULL, 1);
 
@@ -193,7 +183,7 @@ static int rtl822x_init(struct mtk_eth *eth, int addr)
 }
 
 static struct mtk_extphy_id extphy_tbl[] = {
-	{0x001CC840, 0x0fffffff0, 1, rtl822x_init},
+	{RTL822X_PHY_ID, RTL822X_PHY_ID_MASK, 1, rtl822x_init},
 };
 
 static u32 get_cl22_phy_id(struct mtk_eth *eth, int addr)
@@ -241,6 +231,18 @@ static inline bool phy_id_is_match(u32 id, struct mtk_extphy_id *phy)
 	return ((id & phy->phy_id_mask) == (phy->phy_id & phy->phy_id_mask));
 }
 
+static const char *rtl822x_phy_name(u32 phy_id)
+{
+	switch (phy_id) {
+	case RTL8221B_VB_CG_PHY_ID:
+		return "RTL8221B-VB-CG";
+	case RTL8221B_VN_CG_PHY_ID:
+		return "RTL8221B-VN-CG";
+	default:
+		return "RTL822x";
+	}
+}
+
 int mtk_soc_extphy_init(struct mtk_eth *eth, int addr)
 {
 	int i;
@@ -251,20 +253,24 @@ int mtk_soc_extphy_init(struct mtk_eth *eth, int addr)
 	{
 		extphy = &extphy_tbl[i];
 		if (extphy->is_c45)
-		{	
+		{
 			phy_id = get_cl45_phy_id(eth, addr);
-		
+
 		}
 		else
-		{	
+		{
 			phy_id = get_cl22_phy_id(eth, addr);
-			
+
 		}
 
-		if (phy_id_is_match(phy_id, extphy))
-			{extphy->init(eth, addr);}
-		
-	 	
+		if (phy_id_is_match(phy_id, extphy)) {
+			dev_info(eth->dev, "%s detected at phy addr %d (phy_id=0x%08x, clause %d)\n",
+				 rtl822x_phy_name(phy_id), addr, phy_id,
+				 extphy->is_c45 ? 45 : 22);
+			extphy->init(eth, addr);
+		}
+
+
 	}
 
 	return 0;
