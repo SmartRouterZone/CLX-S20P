@@ -376,11 +376,14 @@
 };
 
 &hnat {
-	mtketh-wan = "wan";
-	mtketh-lan = "lan";
+	mtketh-wan = "eth1";					/* GMAC1 standalone 2.5G WAN port. */
+	mtketh-lan = "lan";						/* Match DSA user ports lan1-lan6 by prefix. */
+	mtketh-lan2 = "none";					/* S20P has no eth2; avoid driver fallback to eth2. */
+	mtketh-ppd = "eth0";					/* GMAC0 DSA/switch master for lan1-lan6. */
 	mtketh-max-gmac = <2>;
+	mtketh-ppe-num = <2>;
 	ext-devices-prefix = "usb", "wwan";
-	ext-devices = "wwan0_0","wwan0_1","wwan0.1","wwan0.2";
+	ext-devices = "wwan0_0", "wwan0_1", "wwan0.1", "wwan0.2";
 	status = "okay";
 };
 
