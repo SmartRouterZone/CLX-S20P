@@ -1,0 +1,11 @@
+--- a/mt_wifi/embedded/common/eeprom.c
++++ b/mt_wifi/embedded/common/eeprom.c
+@@ -1397,7 +1397,7 @@ INT RtmpChipOpsEepromHook(RTMP_ADAPTER *pAd, INT infType, INT forceMode)
+ 		if (pAd->E2pAccessMode == E2P_NONE)
+ 			pAd->E2pAccessMode = e2p_default;
+ 
+-		if (infType == RTMP_DEV_INF_RBUS) {
++		if (infType == RTMP_DEV_INF_RBUS && e2p_type != E2P_BIN_MODE) {
+ 			e2p_type = E2P_FLASH_MODE;
+ 		}
+ 
