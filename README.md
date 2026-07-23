@@ -1,8 +1,10 @@
 
 ## Add S20P
 
-- [Source Code](https://github.com/padavanonly/immortalwrt-mt798x-6.6)
-- Merge MTK-Feeds `20260430`
+- [mtk-openwrt-feeds](https://github.com/mediatek/mtk-openwrt-feeds)  
+[OpenWRT-24.10](https://github.com/openwrt/openwrt/tree/openwrt-24.10)  
+[immortalwrt-24.10](https://github.com/immortalwrt/immortalwrt/tree/openwrt-24.10)
+- Merge MTK-Feeds `20260725`
 - 支持MTK闭源WiFi驱动 (*7.6.7.1* - *7.6.7.3*)
 - 支持hnat驱动、内核补丁及配置工具，支持所有硬件加速特性
 - 2.5G口工作正常
