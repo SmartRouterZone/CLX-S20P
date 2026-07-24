@@ -1,7 +1,7 @@
 #
-# hua.shao@mediatek.com
+# SPDX-License-Identifier: GPL-2.0
 #
-# MTK Property Software.
+# Copyright (C) 2021 MediaTek Inc.
 #
 
 include $(TOPDIR)/rules.mk

@@ -1,0 +1,12 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright (C) 2025 MediaTek Inc.
+#
+
+if [ add = "$ACTION" ]; then
+	if [ "$DEVICENAME" != "" ]; then
+		sh /sbin/smp-dispatch.sh
+	fi
+fi
+

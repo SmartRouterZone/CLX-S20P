@@ -1,0 +1,13 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright (C) 2023 MediaTek Inc.
+#
+
+USE_PROCD=1
+PROG=/usr/sbin/tops-tool
+
+procd_open_instance
+procd_set_param command "${PROG}" save_dump /log/tops
+procd_set_param respawn
+procd_close_instance
