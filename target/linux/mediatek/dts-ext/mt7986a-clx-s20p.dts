@@ -4,6 +4,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7986a.dtsi"
 
@@ -25,11 +26,12 @@
 		bootargs-append = " root=PARTLABEL=rootfs rootwait";
 	};
 
-	memory {
+	memory@40000000 {
+		device_type = "memory";
 		reg = <0 0x40000000 0 0x80000000>;
 	};
 
-	gpio-keys {
+	keys {
 		compatible = "gpio-keys";
 
 		button-reset {
@@ -39,7 +41,7 @@
 		};
 	};
 
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 
 		wlan5g_led: wlan5g-led {
@@ -129,8 +131,8 @@
 			interrupt-parent = <&pio>;
 			interrupts = <47 IRQ_TYPE_LEVEL_LOW>;
 			realtek,aldps-enable;
-			realtek,led-link-select = <0xa7 0x03 0x0>; /* led0 at 10/100/1000/2.5G/(2.5G lite), led1 at 10/100 */
-			realtek,led-act-select = <0x321b>; /* led on time = 400ms, duty = 12.5%, freq = 60ms, Enable 10M LPI, modeA, led0 led1 act */
+			realtek,led-link-select = <0xa7 0x03 0x0>;		/* led0 at 10/100/1000/2.5G/(2.5G lite), led1 at 10/100 */
+			realtek,led-act-select = <0x321b>;				/* led on time = 400ms, duty = 12.5%, freq = 60ms, Enable 10M LPI, modeA, led0 led1 act */
 			/*realtek,led-polarity-select = <0x0018>; */
 		};
 
@@ -143,8 +145,8 @@
 			interrupt-parent = <&pio>;
 			interrupts = <46 IRQ_TYPE_LEVEL_LOW>;
 			realtek,aldps-enable;
-			realtek,led-link-select = <0xa7 0x03 0x0>; /* led0 at 10/100/1000/2.5G/(2.5G lite), led1 at 10/100 */
-			realtek,led-act-select = <0x321b>; /* led on time = 400ms, duty = 12.5%, freq = 60ms, Enable 10M LPI, modeA, led0 led1 act */
+			realtek,led-link-select = <0xa7 0x03 0x0>;		/* led0 at 10/100/1000/2.5G/(2.5G lite), led1 at 10/100 */
+			realtek,led-act-select = <0x321b>;				/* led on time = 400ms, duty = 12.5%, freq = 60ms, Enable 10M LPI, modeA, led0 led1 act */
 			/*realtek,led-polarity-select = <0x0018>; */
 		};
 
@@ -211,6 +213,8 @@
 };
 
 &mmc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	pinctrl-names = "default", "state_uhs";
 	pinctrl-0 = <&mmc0_pins_default>;
 	pinctrl-1 = <&mmc0_pins_uhs>;
@@ -237,7 +241,6 @@
 			partitions {
 				block-partition-factory {
 					partname = "factory";
-					compatible = "nvmem-cells";
 
 					nvmem-layout {
 						compatible = "fixed-layout";
@@ -279,24 +282,24 @@
 			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
 			input-enable;
 			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;		/* pull-up 10K */
 		};
 
 		conf-clk {
 			pins = "EMMC_CK";
 			drive-strength = <6>;
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 
 		conf-ds {
 			pins = "EMMC_DSL";
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 
 		conf-rst {
 			pins = "EMMC_RSTB";
 			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;		/* pull-up 10K */
 		};
 	};
 
@@ -312,24 +315,24 @@
 			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
 			input-enable;
 			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;		/* pull-up 10K */
 		};
 
 		conf-clk {
 			pins = "EMMC_CK";
 			drive-strength = <6>;
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 
 		conf-ds {
 			pins = "EMMC_DSL";
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 
 		conf-rst {
 			pins = "EMMC_RSTB";
 			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;		/* pull-up 10K */
 		};
 	};
 
