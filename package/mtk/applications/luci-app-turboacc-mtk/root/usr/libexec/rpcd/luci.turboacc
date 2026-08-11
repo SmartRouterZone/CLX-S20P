@@ -29,7 +29,7 @@ local methods = {
 				hasNFTFULLCONE    = fs.access("/lib/modules/" .. boardinfo.kernel .. "/nft_fullcone.ko"),
 				hasTCPCCA         = readfile("/proc/sys/net/ipv4/tcp_available_congestion_control")
 			}
-			print(json.stringify(features))
+			return features
 		end
 	},
 	getFastPathStat = {
@@ -51,7 +51,7 @@ local methods = {
 					fptype = "MediaTek HNAT" .. wireless_hnat
 				end
 			end
-			print(json.stringify({ type = fptype }))
+			return { type = fptype }
 		end
 	},
 	getFullConeStat = {
@@ -63,17 +63,17 @@ local methods = {
 			elseif fs.access("/sys/module/xt_FULLCONENAT/refcnt") and
 			(readfile("/sys/module/xt_FULLCONENAT/refcnt") or "0") ~= "0" then
 				fctype = "xt_FULLCONENAT"
-			elseif sys.call("iptables -t nat -L zone_wan_postrouting | grep -q fullcone") == 0 then
+			elseif sys.call("iptables -t nat -L zone_wan_postrouting 2>/dev/null | grep -q fullcone") == 0 then
 				fctype = "Boardcom Fullcone"
 			end
-			print(json.stringify({ type = fctype }))
+			return { type = fctype }
 		end
 	},
 	getTCPCCAStat = {
 		call = function()
 			local ccatype = readfile("/proc/sys/net/ipv4/tcp_congestion_control")
 			ccatype = ccatype and ccatype:upper() or nil
-			print(json.stringify({ type = ccatype }))
+			return { type = ccatype }
 		end
 	},
 	getMTKPPEStat = {
@@ -110,7 +110,7 @@ local methods = {
 				fd:close()
 			end
 
-			print(json.stringify(ppe_stat))
+			return ppe_stat
 		end
 	}
 }
