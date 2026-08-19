@@ -103,13 +103,14 @@ Subject: [PATCH] net: ethernet: mtk_eth_soc: add dynamic rx buffer adjustment
  
  	if (mtk_is_netsys_v2_or_greater(eth))
  		return 0;
-@@ -5347,9 +5351,21 @@ static void mtk_uninit(struct net_device
+@@ -5383,10 +5383,21 @@ static int mtk_change_mtu(struct net_device *dev, int new_mtu)
  
  static int mtk_change_mtu(struct net_device *dev, int new_mtu)
  {
 -	int length = new_mtu + MTK_RX_ETH_HLEN;
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_eth *eth = mac->hw;
+-	int max_mtu, i;
 +	int length, i, max_mtu = 0;
 +
 +	dev->mtu = new_mtu;
@@ -126,21 +127,24 @@ Subject: [PATCH] net: ethernet: mtk_eth_soc: add dynamic rx buffer adjustment
  
  	if (rcu_access_pointer(eth->prog) &&
  	    length > MTK_PP_MAX_BUF_SIZE) {
-@@ -5357,8 +5373,12 @@ static int mtk_change_mtu(struct net_dev
+@@ -5394,10 +5405,13 @@ static int mtk_change_mtu(struct net_device *dev, int new_mtu)
  		return -EINVAL;
  	}
  
 -	mtk_set_mcr_max_rx(mac, length);
 -	dev->mtu = new_mtu;
+-
+-	max_mtu = mtk_max_gmac_mtu(eth);
 +	if (length <= MTK_MAX_RX_LENGTH)
 +		eth->rx_buf_len = MTK_MAX_RX_LENGTH;
 +	else if (length <= MTK_MAX_RX_LENGTH_2K)
 +		eth->rx_buf_len = MTK_MAX_RX_LENGTH_2K;
 +	else if (length <= MTK_MAX_RX_LENGTH_9K)
 +		eth->rx_buf_len = MTK_MAX_RX_LENGTH_9K;
++
+ 	for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
+ 		mtk_ppe_update_mtu(eth->ppe[i], max_mtu);
  
- 	return 0;
- }
 @@ -6455,6 +6475,8 @@ static int mtk_add_mac(struct mtk_eth *e
  	eth->netdev[id]->irq = eth->irq_fe[0];
  	eth->netdev[id]->dev.of_node = np;
