@@ -13,7 +13,7 @@ diff --git a/drivers/usb/core/hub.c b/drivers/usb/core/hub.c
 index 1ba3feb5e190..e00b9724661c 100644
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -2480,6 +2480,8 @@ static int usb_enumerate_device(struct usb_device *udev)
+@@ -2519,6 +2519,8 @@
  			if (err < 0)
  				dev_dbg(&udev->dev, "HNP fail, %d\n", err);
  		}
@@ -22,7 +22,7 @@ index 1ba3feb5e190..e00b9724661c 100644
  		return -ENOTSUPP;
  	}
  
-@@ -4985,9 +4987,11 @@ hub_port_init(struct usb_hub *hub, struct usb_device *udev, int port1,
+@@ -5025,9 +5027,11 @@
  				goto fail;
  			}
  			if (maxp0 < 0) {
@@ -35,14 +35,13 @@ index 1ba3feb5e190..e00b9724661c 100644
  				retval = maxp0;
  				continue;
  			}
-diff --git a/drivers/usb/core/otg_productlist.h b/drivers/usb/core/otg_productlist.h
-index db67df29fb2b..ced7b671b234 100644
 --- a/drivers/usb/core/otg_productlist.h
 +++ b/drivers/usb/core/otg_productlist.h
-@@ -35,6 +35,15 @@ static struct usb_device_id productlist_table[] = {
+@@ -34,6 +34,15 @@
+ /* gadget zero, for testing */
  { USB_DEVICE(0x0525, 0xa4a0), },
  #endif
- 
++
 +/* xhci-mtk usb3 root-hub */
 +{ USB_DEVICE(0x1d6b, 0x0003), },
 +
@@ -51,12 +50,9 @@ index db67df29fb2b..ced7b671b234 100644
 +
 +/* MASS STORAGE */
 +{ USB_INTERFACE_INFO(USB_CLASS_MASS_STORAGE, 0, 0) },
-+
+ 
  { }	/* Terminating entry */
  };
- 
-diff --git a/drivers/usb/host/xhci-mtk.c b/drivers/usb/host/xhci-mtk.c
-index 1a1e05db5be9..5b407ad5a4f0 100644
 --- a/drivers/usb/host/xhci-mtk.c
 +++ b/drivers/usb/host/xhci-mtk.c
 @@ -20,6 +20,7 @@
@@ -67,7 +63,7 @@ index 1a1e05db5be9..5b407ad5a4f0 100644
  
  #include "xhci.h"
  #include "xhci-mtk.h"
-@@ -662,6 +663,7 @@ static int xhci_mtk_probe(struct platform_device *pdev)
+@@ -662,6 +663,7 @@
  	if (ret)
  		goto disable_device_wakeup;
  
@@ -75,7 +71,7 @@ index 1a1e05db5be9..5b407ad5a4f0 100644
  	if (!xhci_has_one_roothub(xhci)) {
  		xhci->shared_hcd = usb_create_shared_hcd(driver, dev,
  							 dev_name(dev), hcd);
-@@ -669,6 +671,8 @@ static int xhci_mtk_probe(struct platform_device *pdev)
+@@ -669,6 +671,8 @@
  			ret = -ENOMEM;
  			goto dealloc_usb2_hcd;
  		}
@@ -84,6 +80,6 @@ index 1a1e05db5be9..5b407ad5a4f0 100644
  	}
  
  	usb3_hcd = xhci_get_usb3_hcd(xhci);
+
 -- 
 2.46.0
-

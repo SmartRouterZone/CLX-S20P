@@ -11,10 +11,12 @@ diff --git a/drivers/net/phy/sfp.c b/drivers/net/phy/sfp.c
 index c761c10..3b9c52b 100644
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -325,6 +325,28 @@ static bool sfp_module_supported(const struct sfp_eeprom_id *id)
+@@ -323,6 +323,28 @@
+ 	    id->base.phys_ext_id == SFP_PHYS_EXT_ID_SFP &&
+ 	    !memcmp(id->base.vendor_name, "UBNT            ", 16) &&
  	    !memcmp(id->base.vendor_pn, "UF-INSTANT      ", 16))
- 		return true;
- 
++		return true;
++
 +	/* SFP RollBall module JESS-LINK P60000BBC001-1 Instant has in its
 +	 * EEPROM stored phys id SFF_8472 instead of SFP. Therefore mark this
 +	 * module explicitly as supported based on vendor name and pn match.
@@ -35,12 +37,10 @@ index c761c10..3b9c52b 100644
 +	    !memcmp(id->base.vendor_name, "SK-LINK         ", 16) &&
 +	    (!memcmp(id->base.vendor_pn, "SFP-GE-LX20-SM13", 16) ||
 +	     !memcmp(id->base.vendor_pn, "SFP-GE-LX-SM1550", 16)))
-+		return true;
-+
- 	return false;
- }
+ 		return true;
  
-@@ -2218,7 +2240,7 @@ static int sfp_sm_mod_probe(struct sfp *sfp, bool report)
+ 	return false;
+@@ -2270,7 +2292,7 @@
  	struct sfp_eeprom_id id;
  	bool cotsworks_sfbg;
  	unsigned int mask;
@@ -49,7 +49,7 @@ index c761c10..3b9c52b 100644
  	u8 check;
  	int ret;
  
-@@ -2273,6 +2295,18 @@ static int sfp_sm_mod_probe(struct sfp *sfp, bool report)
+@@ -2325,6 +2347,18 @@
  	cotsworks = !memcmp(id.base.vendor_name, "COTSWORKS       ", 16);
  	cotsworks_sfbg = !memcmp(id.base.vendor_pn, "SFBG", 4);
  
@@ -68,7 +68,7 @@ index c761c10..3b9c52b 100644
  	/* Cotsworks SFF module EEPROM do not always have valid phys_id,
  	 * phys_ext_id, and connector bytes.  Rewrite SFF EEPROM bytes if
  	 * Cotsworks PN matches and bytes are not correct.
-@@ -2286,7 +2320,7 @@ static int sfp_sm_mod_probe(struct sfp *sfp, bool report)
+@@ -2338,7 +2372,7 @@
  	/* Validate the checksum over the base structure */
  	check = sfp_check(&id.base, sizeof(id.base) - 1);
  	if (check != id.base.cc_base) {
@@ -77,6 +77,6 @@ index c761c10..3b9c52b 100644
  			dev_warn(sfp->dev,
  				 "EEPROM base structure checksum failure (0x%02x != 0x%02x)\n",
  				 check, id.base.cc_base);
+
 -- 
 2.45.2
-

@@ -10,7 +10,7 @@ Subject: [PATCH] net: ethernet: mtk_eth_soc: refactor SER monitor
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -4413,80 +4413,232 @@ static void mtk_hw_warm_reset(struct mtk
+@@ -4438,80 +4438,232 @@
  			val, rst_mask);
  }
  
@@ -89,6 +89,8 @@ Subject: [PATCH] net: ethernet: mtk_eth_soc: refactor SER monitor
 -		if (++eth->reset.wdma_hang_count > 2) {
 -			eth->reset.wdma_hang_count = 0;
 -			ret = true;
+-		}
+-		goto out;
 +	for (i = 0; i < 3; i++) {
 +		if (!mtk_r32(eth, reg_map->wdma_base[i] + 0xc))
 +			continue;
@@ -117,8 +119,7 @@ Subject: [PATCH] net: ethernet: mtk_eth_soc: refactor SER monitor
 +			}
 +			eth->reset.wdidx[i] = wdidx;
 +			goto out;
- 		}
--		goto out;
++		}
 +		eth->reset.wdma_hang_count[i] = 0;
 +		eth->reset.wdidx[i] = wdidx;
  	}
@@ -250,6 +251,8 @@ Subject: [PATCH] net: ethernet: mtk_eth_soc: refactor SER monitor
 -	cdm1_busy = !!(mtk_r32(eth, MTK_FE_CDM1_FSM) & GENMASK(31, 16));
 -	adma_busy = !(mtk_r32(eth, reg_map->pdma.adma_rx_dbg0) & GENMASK(4, 0)) &&
 -		    !(mtk_r32(eth, reg_map->pdma.adma_rx_dbg0) & BIT(6));
+-
+-	if (oq_hang && cdm1_busy && adma_busy) {
 +	for (i = 0; i < 4; i++) {
 +		if (!mtk_r32(eth, reg_map->pdma.rx_ptr + (i * 0x100)))
 +			continue;
@@ -260,8 +263,7 @@ Subject: [PATCH] net: ethernet: mtk_eth_soc: refactor SER monitor
 +
 +		eth->reset.adidx[i] = adidx;
 +	}
- 
--	if (oq_hang && cdm1_busy && adma_busy) {
++
 +	oq_hang = !!(mtk_get_oq_sta(eth, PSE_ADMA_PORT));
 +	cdma_rxfsm = FIELD_GET(GENMASK(27, 16), mtk_r32(eth, MTK_FE_CDM1_FSM));
 +	if (oq_hang && adma_hang &&
@@ -273,9 +275,10 @@ Subject: [PATCH] net: ethernet: mtk_eth_soc: refactor SER monitor
  		}
  		goto out;
  	}
-+	eth->reset.cdma_rxfsm = cdma_rxfsm;
- 
+-
 -	eth->reset.wdma_hang_count = 0;
++	eth->reset.cdma_rxfsm = cdma_rxfsm;
++
  	eth->reset.qdma_hang_count = 0;
  	eth->reset.adma_hang_count = 0;
  out:
@@ -285,7 +288,7 @@ Subject: [PATCH] net: ethernet: mtk_eth_soc: refactor SER monitor
  }
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -384,8 +384,6 @@
+@@ -385,8 +385,6 @@
  #define MTK_TX_DONE_INT0	BIT(0)
  #define MTK_TX_DONE_INT		MTK_TX_DONE_DLY
  
@@ -295,19 +298,19 @@ Subject: [PATCH] net: ethernet: mtk_eth_soc: refactor SER monitor
  #define MTK_RLS_DONE_INT	BIT(0)
  
 @@ -728,6 +726,12 @@
+ #define MTK_FE_DROP_FQ		0x244
  #define MTK_FE_DROP_FC		0x248
  #define MTK_FE_DROP_PPE		0x24C
- 
++
 +#define MTK_FE_CDMW_FSM(x)	(((x) == 0) ? MTK_FE_CDM3_FSM : \
 +				 ((x) == 1) ? MTK_FE_CDM4_FSM : MTK_FE_CDM5_FSM)
 +
 +#define MTK_FE_GDM_FSM(x)	(((x) == 0) ? MTK_FE_GDM1_FSM : \
 +				 ((x) == 1) ? MTK_FE_CDM2_FSM : MTK_FE_CDM3_FSM)
-+
+ 
  #define MTK_MAC_FSM(x)		(0x1010C + ((x) * 0x100))
  
- struct mtk_rx_dma {
-@@ -966,6 +970,12 @@ enum mtk_pse_port {
+@@ -967,6 +971,12 @@
  	PSE_PORT_MAX
  };
  
@@ -320,7 +323,7 @@ Subject: [PATCH] net: ethernet: mtk_eth_soc: refactor SER monitor
  /* GMAC Identifier */
  enum mtk_gmac_id {
  	MTK_GMAC1_ID = 0,
-@@ -1514,10 +1524,21 @@ struct mtk_eth {
+@@ -1515,10 +1525,21 @@
  	struct {
  		struct delayed_work monitor_work;
  		atomic_t force;

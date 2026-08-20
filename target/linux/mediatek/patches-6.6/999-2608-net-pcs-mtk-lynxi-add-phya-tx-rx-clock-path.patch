@@ -18,7 +18,7 @@ diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/
 index 4e2ac9f..1bac97d 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -6772,6 +6772,9 @@ static int mtk_sgmii_init(struct mtk_eth *eth)
+@@ -5073,6 +5073,9 @@
  		else if (of_property_read_bool(np, "mediatek,pnswap-rx"))
  			flags |= MTK_SGMII_FLAG_PN_SWAP_RX;
  
@@ -28,8 +28,6 @@ index 4e2ac9f..1bac97d 100644
  		of_node_put(np);
  
  		if (IS_ERR(regmap))
-diff --git a/drivers/net/pcs/pcs-mtk-lynxi.c b/drivers/net/pcs/pcs-mtk-lynxi.c
-index 6c94701..1b44735 100644
 --- a/drivers/net/pcs/pcs-mtk-lynxi.c
 +++ b/drivers/net/pcs/pcs-mtk-lynxi.c
 @@ -26,6 +26,7 @@
@@ -49,7 +47,7 @@ index 6c94701..1b44735 100644
  
  /* Register to reset SGMII design */
  #define SGMSYS_RESERVED_0		0x34
-@@ -198,7 +201,7 @@ static int mtk_pcs_lynxi_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+@@ -198,7 +201,7 @@
  {
  	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
  	bool mode_changed = false, changed;
@@ -58,7 +56,7 @@ index 6c94701..1b44735 100644
  	unsigned int pnswap_tx, pnswap_rx;
  	int advertise, link_timer;
  
-@@ -226,6 +229,12 @@ static int mtk_pcs_lynxi_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+@@ -226,6 +229,12 @@
  		}
  	}
  
@@ -71,7 +69,7 @@ index 6c94701..1b44735 100644
  	if (mpcs->interface != interface || mpcs->neg_mode != neg_mode) {
  		link_timer = phylink_get_link_timer_ns(interface);
  		if (link_timer < 0)
-@@ -277,12 +286,14 @@ static int mtk_pcs_lynxi_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+@@ -277,12 +286,14 @@
  
  	/* Update the sgmsys mode register */
  	regmap_update_bits(mpcs->regmap, SGMSYS_SGMII_MODE,
@@ -88,7 +86,7 @@ index 6c94701..1b44735 100644
  
  	/* Release PHYA power down state
  	 * Only removing bit SGMII_PHYA_PWD isn't enough.
-@@ -469,6 +480,9 @@ static int mtk_pcs_lynxi_probe(struct platform_device *pdev)
+@@ -469,6 +480,9 @@
  	else if (of_property_read_bool(np->parent, "mediatek,pnswap-rx"))
  		flags |= MTK_SGMII_FLAG_PN_SWAP_RX;
  
@@ -98,8 +96,6 @@ index 6c94701..1b44735 100644
  	if (of_parse_phandle(np->parent, "resets", 0)) {
  		mpcs->rstc = of_reset_control_get_shared(np->parent, NULL);
  		if (IS_ERR(mpcs->rstc))
-diff --git a/include/linux/pcs/pcs-mtk-lynxi.h b/include/linux/pcs/pcs-mtk-lynxi.h
-index 656a3e5..4ab8a32 100644
 --- a/include/linux/pcs/pcs-mtk-lynxi.h
 +++ b/include/linux/pcs/pcs-mtk-lynxi.h
 @@ -7,6 +7,7 @@
@@ -110,6 +106,6 @@ index 656a3e5..4ab8a32 100644
  struct phylink_pcs *mtk_pcs_lynxi_create(struct device *dev,
  					 struct regmap *regmap,
  					 u32 ana_rgc3, u32 flags);
+
 -- 
 2.45.2
-

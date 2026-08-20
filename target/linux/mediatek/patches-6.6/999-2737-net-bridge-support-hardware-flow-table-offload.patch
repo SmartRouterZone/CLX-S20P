@@ -22,10 +22,11 @@ index 26b79fe..6192d48 100644
  
  #include <linux/uaccess.h>
  #include "br_private.h"
-@@ -434,6 +438,28 @@ static const struct ethtool_ops br_ethtool_ops = {
+@@ -449,6 +453,28 @@
+ 	.get_link		 = ethtool_op_get_link,
  	.get_link_ksettings	 = br_get_link_ksettings,
  };
- 
++
 +#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
 +static int br_flow_offload_check(struct flow_offload_hw_path *path)
 +{
@@ -47,11 +48,10 @@ index 26b79fe..6192d48 100644
 +	return 0;
 +}
 +#endif /* CONFIG_NF_FLOW_TABLE */
-+
+ 
  static const struct net_device_ops br_netdev_ops = {
  	.ndo_open		 = br_dev_open,
- 	.ndo_stop		 = br_dev_stop,
-@@ -469,6 +495,9 @@ static const struct net_device_ops br_netdev_ops = {
+@@ -483,6 +509,9 @@
  	.ndo_bridge_dellink	 = br_dellink,
  	.ndo_features_check	 = passthru_features_check,
  	.ndo_fill_forward_path	 = br_fill_forward_path,
@@ -60,4 +60,4 @@ index 26b79fe..6192d48 100644
 +#endif
  };
  
- static const struct device_type br_type = {
+ static struct device_type br_type = {

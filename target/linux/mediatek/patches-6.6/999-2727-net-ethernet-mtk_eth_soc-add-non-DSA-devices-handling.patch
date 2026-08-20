@@ -14,13 +14,14 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -4098,35 +4098,40 @@ static int mtk_device_event(struct notif
+@@ -4102,35 +4102,40 @@
  	struct net_device *ldev;
  	struct list_head *iter;
  	struct dsa_port *dp;
-+	unsigned int queue;
- 
+-
 -	if (event != NETDEV_CHANGE)
++	unsigned int queue;
++
 +	if (event != NETDEV_CHANGE || dev->priv_flags & IFF_EBRIDGE)
  		return NOTIFY_DONE;
  
@@ -48,18 +49,18 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  
 -	dp = dsa_port_from_netdev(dev);
 -	if (dp->index >= MTK_QDMA_NUM_QUEUES)
--		return NOTIFY_DONE;
 +	if (dsa_slave_dev_check(dev)) {
 +		dp = dsa_port_from_netdev(dev);
 +		queue = dp->index + 3;
 +	} else
 +		queue = mac->id;
++
++	if (queue >= MTK_QDMA_NUM_QUEUES)
+ 		return NOTIFY_DONE;
  
 -	if (mac->speed > 0 && mac->speed <= s.base.speed)
 -		s.base.speed = 0;
-+	if (queue >= MTK_QDMA_NUM_QUEUES)
-+		return NOTIFY_DONE;
- 
+-
 -	mtk_set_queue_speed(eth, dp->index + 3, s.base.speed);
 +	mtk_set_queue_speed(eth, queue, s.base.speed);
  

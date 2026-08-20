@@ -1,6 +1,6 @@
 --- a/arch/arm64/boot/dts/mediatek/mt7988a-rfb.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7988a-rfb.dts
-@@ -228,6 +228,15 @@
+@@ -229,6 +229,15 @@
  	status = "okay";
  };
  
@@ -18,7 +18,7 @@
  };
 --- a/arch/arm64/boot/dts/mediatek/mt7988a.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7988a.dtsi
-@@ -1605,6 +1605,14 @@
+@@ -1585,6 +1585,14 @@
  			};
  		};
  
@@ -35,7 +35,7 @@
  			reg = <0 0x151a5000 0 0x1000>;
 --- a/drivers/net/ethernet/mediatek/Kconfig
 +++ b/drivers/net/ethernet/mediatek/Kconfig
-@@ -32,4 +32,28 @@ config NET_MEDIATEK_STAR_EMAC
+@@ -32,4 +32,28 @@
  	  This driver supports the ethernet MAC IP first used on
  	  MediaTek MT85** SoCs.
  
@@ -66,25 +66,25 @@
  endif #NET_VENDOR_MEDIATEK
 --- a/drivers/net/ethernet/mediatek/Makefile
 +++ b/drivers/net/ethernet/mediatek/Makefile
-@@ -11,3 +11,4 @@ mtk_eth-$(CONFIG_NET_MEDIATEK_SOC_WED) +
+@@ -11,3 +11,4 @@
  endif
  obj-$(CONFIG_NET_MEDIATEK_SOC_WED) += mtk_wed_ops.o
  obj-$(CONFIG_NET_MEDIATEK_STAR_EMAC) += mtk_star_emac.o
 +obj-$(CONFIG_NET_MEDIATEK_HNAT) += mtk_hnat/
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -36,6 +36,10 @@
+@@ -35,6 +35,10 @@
+ #include "mtk_eth_soc.h"
  #include "mtk_eth_dbg.h"
  #include "mtk_wed.h"
- 
++
 +#if defined(CONFIG_NET_MEDIATEK_HNAT) || defined(CONFIG_NET_MEDIATEK_HNAT_MODULE)
 +#include "mtk_hnat/nf_hnat_mtk.h"
 +#endif
-+
+ 
  static int mtk_msg_level = -1;
  module_param_named(msg_level, mtk_msg_level, int, 0);
- MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
-@@ -2610,8 +2614,32 @@ static int mtk_poll_rx(struct napi_struc
+@@ -2611,8 +2615,32 @@
  				skb_dst_set_noref(skb, &eth->dsa_meta[port]->dst);
  		}
  
@@ -117,7 +117,7 @@
  
  		if (eth->hwlro && eth->debugfs->hwlro_stats.ebl &&
  		    IS_HW_LRO_RING(ring->ring_no)) {
-@@ -4217,8 +4245,10 @@ static int mtk_open(struct net_device *d
+@@ -4230,8 +4258,10 @@
  			return err;
  		}
  
@@ -128,7 +128,7 @@
  
  		for (i = 0; i < MTK_MAX_DEVS; i++) {
  			if (!eth->netdev[i])
-@@ -4384,8 +4414,10 @@ static int mtk_stop(struct net_device *d
+@@ -4401,8 +4431,10 @@
  
  	mtk_dma_free(eth);
  
@@ -139,7 +139,7 @@
  
  	return 0;
  }
-@@ -6761,6 +6793,7 @@ static int mtk_probe(struct platform_dev
+@@ -6794,6 +6826,7 @@
  		};
  	}
  
@@ -147,7 +147,7 @@
  	if (eth->soc->offload_version) {
  		u8 ppe_num = eth->soc->ppe_num;
  
-@@ -6781,6 +6814,7 @@ static int mtk_probe(struct platform_dev
+@@ -6814,6 +6847,7 @@
  				goto err_deinit_ppe;
  		}
  	}

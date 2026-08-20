@@ -2,7 +2,7 @@ diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
 index 2d37fdf..9283990 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -838,6 +838,7 @@ enum net_device_path_type {
+@@ -913,6 +913,7 @@
  	DEV_PATH_DSA,
  	DEV_PATH_DSLITE,
  	DEV_PATH_6RD,
@@ -10,8 +10,6 @@ index 2d37fdf..9283990 100644
  	DEV_PATH_MTK_WDMA,
  };
  
-diff --git a/net/l2tp/l2tp_ppp.c b/net/l2tp/l2tp_ppp.c
-index 5e12e7c..5198cd1 100644
 --- a/net/l2tp/l2tp_ppp.c
 +++ b/net/l2tp/l2tp_ppp.c
 @@ -89,6 +89,7 @@
@@ -22,7 +20,7 @@ index 5e12e7c..5198cd1 100644
  #include <net/ip.h>
  #include <net/udp.h>
  #include <net/inet_common.h>
-@@ -122,9 +123,14 @@ struct pppol2tp_session {
+@@ -123,9 +124,14 @@
  };
  
  static int pppol2tp_xmit(struct ppp_channel *chan, struct sk_buff *skb);
@@ -37,10 +35,11 @@ index 5e12e7c..5198cd1 100644
  };
  
  static const struct proto_ops pppol2tp_ops;
-@@ -312,6 +318,28 @@ static int pppol2tp_sendmsg(struct socket *sock, struct msghdr *m,
+@@ -316,6 +322,28 @@
+ error:
  	return error;
  }
- 
++
 +#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
 +static int l2tp_ppp_flow_offload_check(struct ppp_channel *chan,
 +				       struct flow_offload_hw_path *path)
@@ -62,7 +61,6 @@ index 5e12e7c..5198cd1 100644
 +	return 0;
 +}
 +#endif /* IS_ENABLED(CONFIG_NF_FLOW_TABLE) */
-+
+ 
  /* Transmit function called by generic PPP driver.  Sends PPP frame
   * over PPPoL2TP socket.
-  *

@@ -34,7 +34,7 @@ Signed-off-by: Martin KaFai Lau <martin.lau@kernel.org>
  
  #include <net/netkit.h>
  #include <net/dst.h>
-@@ -177,7 +178,7 @@ out:
+@@ -177,7 +178,7 @@
  	rcu_read_unlock();
  }
  
@@ -45,7 +45,7 @@ Signed-off-by: Martin KaFai Lau <martin.lau@kernel.org>
  }
 --- a/include/net/netkit.h
 +++ b/include/net/netkit.h
-@@ -10,6 +10,7 @@ int netkit_prog_attach(const union bpf_a
+@@ -10,6 +10,7 @@
  int netkit_link_attach(const union bpf_attr *attr, struct bpf_prog *prog);
  int netkit_prog_detach(const union bpf_attr *attr, struct bpf_prog *prog);
  int netkit_prog_query(const union bpf_attr *attr, union bpf_attr __user *uattr);
@@ -53,7 +53,7 @@ Signed-off-by: Martin KaFai Lau <martin.lau@kernel.org>
  #else
  static inline int netkit_prog_attach(const union bpf_attr *attr,
  				     struct bpf_prog *prog)
-@@ -34,5 +35,10 @@ static inline int netkit_prog_query(cons
+@@ -34,5 +35,10 @@
  {
  	return -EINVAL;
  }
@@ -74,7 +74,7 @@ Signed-off-by: Martin KaFai Lau <martin.lau@kernel.org>
  #include <linux/un.h>
  #include <net/xdp_sock_drv.h>
  
-@@ -2492,6 +2493,16 @@ static const struct bpf_func_proto bpf_c
+@@ -2501,6 +2502,16 @@
  DEFINE_PER_CPU(struct bpf_redirect_info, bpf_redirect_info);
  EXPORT_PER_CPU_SYMBOL_GPL(bpf_redirect_info);
  
@@ -91,7 +91,7 @@ Signed-off-by: Martin KaFai Lau <martin.lau@kernel.org>
  int skb_do_redirect(struct sk_buff *skb)
  {
  	struct bpf_redirect_info *ri = this_cpu_ptr(&bpf_redirect_info);
-@@ -2505,12 +2516,9 @@ int skb_do_redirect(struct sk_buff *skb)
+@@ -2514,12 +2525,9 @@
  	if (unlikely(!dev))
  		goto out_drop;
  	if (flags & BPF_F_PEER) {

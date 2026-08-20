@@ -1,6 +1,6 @@
 --- a/drivers/mtd/spi-nor/core.c
 +++ b/drivers/mtd/spi-nor/core.c
-@@ -3387,7 +3387,21 @@ static int spi_nor_cal_read(void *priv,
+@@ -3528,7 +3528,21 @@
  	nor->read_opcode = SPINOR_OP_READ;
  	nor->read_dummy = 0;
  
@@ -23,7 +23,7 @@
  }
  
  static const struct flash_info *spi_nor_get_flash_info(struct spi_nor *nor,
-@@ -3482,6 +3496,15 @@ static int spi_nor_hw_reset(struct spi_n
+@@ -3623,6 +3637,15 @@
  	return 0;
  }
  
@@ -39,7 +39,7 @@
  int spi_nor_scan(struct spi_nor *nor, const char *name,
  		 const struct spi_nor_hwcaps *hwcaps)
  {
-@@ -3518,8 +3541,16 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -3659,8 +3682,16 @@
  	if (ret)
  		return ret;
  

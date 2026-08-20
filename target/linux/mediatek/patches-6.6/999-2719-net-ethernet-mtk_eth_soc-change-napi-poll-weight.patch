@@ -11,7 +11,7 @@ This parameter will strongly affect the peak throughput of the SW path.
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -6583,19 +6583,22 @@ static int mtk_probe(struct platform_dev
+@@ -6615,19 +6615,22 @@
  	 */
  	init_dummy_netdev(&eth->dummy_dev);
  

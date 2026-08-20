@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1908,6 +1908,13 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1925,6 +1925,13 @@
  	txd = itxd;
  	txd_pdma = qdma_to_pdma(ring, txd);
  
@@ -14,4 +14,3 @@
  	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
  		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
  		unsigned int offset = 0;
-

@@ -12,10 +12,11 @@ diff --git a/drivers/phy/mediatek/phy-mtk-tphy.c b/drivers/phy/mediatek/phy-mtk-
 index 05eab9014132..7f41afe101b2 100644
 --- a/drivers/phy/mediatek/phy-mtk-tphy.c
 +++ b/drivers/phy/mediatek/phy-mtk-tphy.c
-@@ -44,6 +44,15 @@
+@@ -45,6 +45,15 @@
+ #define SSUSB_SIFSLV_V2_CHIP		0x100
  #define SSUSB_SIFSLV_V2_U3PHYD		0x200
  #define SSUSB_SIFSLV_V2_U3PHYA		0x400
- 
++
 +/* version V4 sub-banks offset base address */
 +/* pcie phy banks */
 +#define SSUSB_SIFSLV_V4_SPLLC		0x000
@@ -24,11 +25,10 @@ index 05eab9014132..7f41afe101b2 100644
 +#define SSUSB_SIFSLV_V4_U3PHYA		0xb00
 +
 +#define SSUSB_LN1_OFFSET		0x10000
-+
+ 
  #define U3P_MISC_REG1		0x04
  #define MR1_EFUSE_AUTO_LOAD_DIS		BIT(6)
- 
-@@ -271,6 +280,7 @@ enum mtk_phy_version {
+@@ -276,6 +285,7 @@
  	MTK_PHY_V1 = 1,
  	MTK_PHY_V2,
  	MTK_PHY_V3,
@@ -36,7 +36,7 @@ index 05eab9014132..7f41afe101b2 100644
  };
  
  struct mtk_phy_pdata {
-@@ -320,6 +330,9 @@ struct mtk_phy_instance {
+@@ -325,6 +335,9 @@
  	u32 efuse_intr;
  	u32 efuse_tx_imp;
  	u32 efuse_rx_imp;
@@ -46,10 +46,17 @@ index 05eab9014132..7f41afe101b2 100644
  	int eye_src;
  	int eye_vrt;
  	int eye_term;
-@@ -1115,6 +1128,36 @@ static void phy_v2_banks_init(struct mtk_tphy *tphy,
- 	}
- }
- 
+@@ -1118,6 +1131,36 @@
+ 		u3_banks->chip = instance->port_base + SSUSB_SIFSLV_V2_CHIP;
+ 		u3_banks->phyd = instance->port_base + SSUSB_SIFSLV_V2_U3PHYD;
+ 		u3_banks->phya = instance->port_base + SSUSB_SIFSLV_V2_U3PHYA;
++		break;
++	default:
++		dev_err(tphy->dev, "incompatible PHY type\n");
++		return;
++	}
++}
++
 +static void phy_v4_banks_init(struct mtk_tphy *tphy,
 +			      struct mtk_phy_instance *instance)
 +{
@@ -73,17 +80,10 @@ index 05eab9014132..7f41afe101b2 100644
 +		u3_banks->chip = instance->port_base + SSUSB_SIFSLV_V4_CHIP;
 +		u3_banks->phyd = instance->port_base + SSUSB_SIFSLV_V4_U3PHYD;
 +		u3_banks->phya = instance->port_base + SSUSB_SIFSLV_V4_U3PHYA;
-+		break;
-+	default:
-+		dev_err(tphy->dev, "incompatible PHY type\n");
-+		return;
-+	}
-+}
-+
- static void phy_parse_property(struct mtk_tphy *tphy,
- 				struct mtk_phy_instance *instance)
- {
-@@ -1306,6 +1349,40 @@ static int phy_efuse_get(struct mtk_tphy *tphy, struct mtk_phy_instance *instanc
+ 		break;
+ 	default:
+ 		dev_err(tphy->dev, "incompatible PHY type\n");
+@@ -1316,6 +1359,40 @@
  
  		dev_dbg(dev, "u3 efuse - intr %x, rx_imp %x, tx_imp %x\n",
  			instance->efuse_intr, instance->efuse_rx_imp,instance->efuse_tx_imp);
@@ -124,10 +124,20 @@ index 05eab9014132..7f41afe101b2 100644
  		break;
  	default:
  		dev_err(dev, "no sw efuse for type %d\n", instance->type);
-@@ -1332,6 +1409,19 @@ static void phy_efuse_set(struct mtk_phy_instance *instance)
+@@ -1342,7 +1419,6 @@
  				     instance->efuse_intr);
  		break;
  	case PHY_TYPE_USB3:
+-	case PHY_TYPE_PCIE:
+ 		mtk_phy_set_bits(u3_banks->phyd + U3P_U3_PHYD_RSV, P3D_RG_EFUSE_AUTO_LOAD_DIS);
+ 
+ 		mtk_phy_update_field(u3_banks->phyd + U3P_U3_PHYD_IMPCAL0, P3D_RG_TX_IMPEL,
+@@ -1355,6 +1431,45 @@
+ 
+ 		mtk_phy_update_field(u3_banks->phya + U3P_U3_PHYA_REG0, P3A_RG_IEXT_INTR,
+ 				    instance->efuse_intr);
++		break;
++	case PHY_TYPE_PCIE:
 +		mtk_phy_set_bits(u3_banks->phyd + U3P_U3_PHYD_RSV, P3D_RG_EFUSE_AUTO_LOAD_DIS);
 +
 +		mtk_phy_update_field(u3_banks->phyd + U3P_U3_PHYD_IMPCAL0, P3D_RG_TX_IMPEL,
@@ -140,14 +150,6 @@ index 05eab9014132..7f41afe101b2 100644
 +
 +		mtk_phy_update_field(u3_banks->phya + U3P_U3_PHYA_REG0, P3A_RG_IEXT_INTR,
 +				    instance->efuse_intr);
-+		break;
- 	case PHY_TYPE_PCIE:
- 		mtk_phy_set_bits(u3_banks->phyd + U3P_U3_PHYD_RSV, P3D_RG_EFUSE_AUTO_LOAD_DIS);
- 
-@@ -1345,6 +1435,31 @@ static void phy_efuse_set(struct mtk_phy_instance *instance)
- 
- 		mtk_phy_update_field(u3_banks->phya + U3P_U3_PHYA_REG0, P3A_RG_IEXT_INTR,
- 				    instance->efuse_intr);
 +
 +
 +		if ((!instance->efuse_intr_ln1 &&
@@ -176,7 +178,7 @@ index 05eab9014132..7f41afe101b2 100644
  		break;
  	default:
  		dev_warn(dev, "no sw efuse for type %d\n", instance->type);
-@@ -1484,6 +1599,9 @@ static struct phy *mtk_phy_xlate(struct device *dev,
+@@ -1494,6 +1609,9 @@
  	case MTK_PHY_V3:
  		phy_v2_banks_init(tphy, instance);
  		break;
@@ -186,20 +188,20 @@ index 05eab9014132..7f41afe101b2 100644
  	default:
  		dev_err(dev, "phy version is not supported\n");
  		return ERR_PTR(-EINVAL);
-@@ -1536,6 +1654,12 @@ static const struct mtk_phy_pdata mt8195_pdata = {
+@@ -1544,6 +1662,12 @@
+ 	.sw_pll_48m_to_26m = true,
+ 	.sw_efuse_supported = true,
  	.version = MTK_PHY_V3,
- };
- 
++};
++
 +static const struct mtk_phy_pdata tphy_v4_pdata = {
 +	.avoid_rx_sen_degradation = false,
 +	.sw_efuse_supported = true,
 +	.version = MTK_PHY_V4,
-+};
-+
+ };
+ 
  static const struct of_device_id mtk_tphy_id_table[] = {
- 	{ .compatible = "mediatek,mt2701-u3phy", .data = &tphy_v1_pdata },
- 	{ .compatible = "mediatek,mt2712-u3phy", .data = &tphy_v2_pdata },
-@@ -1544,6 +1668,7 @@ static const struct of_device_id mtk_tphy_id_table[] = {
+@@ -1554,6 +1678,7 @@
  	{ .compatible = "mediatek,generic-tphy-v1", .data = &tphy_v1_pdata },
  	{ .compatible = "mediatek,generic-tphy-v2", .data = &tphy_v2_pdata },
  	{ .compatible = "mediatek,generic-tphy-v3", .data = &tphy_v3_pdata },
@@ -207,6 +209,6 @@ index 05eab9014132..7f41afe101b2 100644
  	{ },
  };
  MODULE_DEVICE_TABLE(of, mtk_tphy_id_table);
+
 -- 
 2.46.0
-

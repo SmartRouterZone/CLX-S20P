@@ -12,7 +12,7 @@ diff --git a/drivers/net/phy/sfp.c b/drivers/net/phy/sfp.c
 index 44b2898..311a27a 100644
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -524,6 +524,9 @@ static const struct sfp_quirk sfp_quirks[] = {
+@@ -571,6 +571,9 @@
  
  	// OEM SFP-GE-T is a 1000Base-T module with broken TX_FAULT indicator
  	SFP_QUIRK_F("OEM", "SFP-GE-T", sfp_fixup_ignore_tx_fault),
@@ -22,6 +22,6 @@ index 44b2898..311a27a 100644
  
  	SFP_QUIRK_F("ETU", "ESP-T5-R", sfp_fixup_rollball_cc),
  	SFP_QUIRK_F("OEM", "SFP-10G-T", sfp_fixup_rollball_cc),
+
 -- 
 2.45.2
-

@@ -20,7 +20,7 @@ enabling MAC/PHY EEE capability.
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -916,6 +916,41 @@ static void mtk_set_queue_speed(struct m
+@@ -916,6 +916,41 @@
  	mtk_w32(eth, val, soc->reg_map->qdma.qtx_sch + ofs);
  }
  
@@ -62,7 +62,7 @@ enabling MAC/PHY EEE capability.
  static void mtk_gdm_mac_link_up(struct mtk_mac *mac,
  				struct phy_device *phy,
  				unsigned int mode, phy_interface_t interface,
-@@ -952,6 +987,9 @@ static void mtk_gdm_mac_link_up(struct m
+@@ -952,6 +987,9 @@
  
  	mcr |= MAC_MCR_TX_EN | MAC_MCR_RX_EN | MAC_MCR_FORCE_LINK;
  	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
@@ -72,7 +72,7 @@ enabling MAC/PHY EEE capability.
  }
  
  static void mtk_xgdm_mac_link_up(struct mtk_mac *mac,
-@@ -5407,6 +5445,47 @@ static int mtk_set_rxfh(struct net_devic
+@@ -5438,6 +5476,47 @@
  	return 0;
  }
  
@@ -120,7 +120,7 @@ enabling MAC/PHY EEE capability.
  static u16 mtk_select_queue(struct net_device *dev, struct sk_buff *skb,
  			    struct net_device *sb_dev)
  {
-@@ -5443,6 +5522,8 @@ static const struct ethtool_ops mtk_etht
+@@ -5474,6 +5553,8 @@
  	.get_rxfh_indir_size	= mtk_get_rxfh_indir_size,
  	.get_rxfh		= mtk_get_rxfh,
  	.set_rxfh		= mtk_set_rxfh,
@@ -129,18 +129,18 @@ enabling MAC/PHY EEE capability.
  };
  
  static const struct net_device_ops mtk_netdev_ops = {
-@@ -5785,6 +5866,8 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -5816,6 +5897,8 @@
+ 	/* mac config is not set */
  	mac->interface = PHY_INTERFACE_MODE_NA;
  	mac->speed = SPEED_UNKNOWN;
- 
-+	mac->tx_lpi_timer = 1000;
 +
++	mac->tx_lpi_timer = 1000;
+ 
  	mac->phylink_config.dev = &eth->netdev[id]->dev;
  	mac->phylink_config.type = PHYLINK_NETDEV;
- 	mac->phylink_config.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -549,6 +549,8 @@
+@@ -550,6 +550,8 @@
  #define MAC_MCR_RX_FIFO_CLR_DIS	BIT(12)
  #define MAC_MCR_BACKOFF_EN	BIT(9)
  #define MAC_MCR_BACKPR_EN	BIT(8)
@@ -150,9 +150,10 @@ enabling MAC/PHY EEE capability.
  #define MAC_MCR_FORCE_TX_FC	BIT(4)
  #define MAC_MCR_SPEED_1000	BIT(3)
 @@ -557,6 +559,14 @@
+ #define MAC_MCR_FORCE_DPX	BIT(1)
  #define MAC_MCR_FORCE_LINK	BIT(0)
  #define MAC_MCR_FORCE_LINK_DOWN	(MAC_MCR_FORCE_MODE)
- 
++
 +/* Mac EEE control registers */
 +#define MTK_MAC_EEE(x)		(0x10104 + (x * 0x100))
 +#define MAC_EEE_WAKEUP_TIME_1000	GENMASK(31, 24)
@@ -160,11 +161,10 @@ enabling MAC/PHY EEE capability.
 +#define MAC_EEE_LPI_TXIDLE_THD	GENMASK(15, 8)
 +#define MAC_EEE_RESV0		GENMASK(7, 4)
 +#define MAC_EEE_LPI_MODE	BIT(0)
-+
+ 
  /* Mac status registers */
  #define MTK_MAC_MSR(x)		(0x10108 + (x * 0x100))
- #define MAC_MSR_EEE1G		BIT(7)
-@@ -1565,6 +1575,8 @@ struct mtk_mac {
+@@ -1566,6 +1576,8 @@
  	__be32				hwlro_ip[MTK_MAX_LRO_IP_CNT];
  	int				hwlro_ip_cnt;
  	unsigned int			syscfg0;

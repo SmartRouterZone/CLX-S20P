@@ -1,12 +1,13 @@
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -1929,15 +1929,18 @@ static int spinand_init_via_casn(struct
+@@ -1715,15 +1715,18 @@
  				 struct nand_casn *casn)
  {
  	struct nand_device *nand = spinand_to_nand(spinand);
 -	u32 val;
- 	int ret;
+-	int ret;
 -	int i;
++	int ret;
  
  	/* Set members of nand->memorg via CASN. */
 -	for (i = 0; i < 9; i++) {

@@ -26,7 +26,7 @@ cat /sys/kernel/debug/mtketh/qdma_pppq
  
  #include "mtk_eth_soc.h"
  #include "mtk_eth_dbg.h"
-@@ -30,14 +31,60 @@
+@@ -31,14 +32,60 @@
  static int mtk_qdma_pppq_show(struct seq_file *m, void *v)
  {
  	struct mtk_eth *eth = m->private;
@@ -94,7 +94,7 @@ cat /sys/kernel/debug/mtketh/qdma_pppq
  }
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -4243,6 +4243,51 @@ static bool mtk_uses_dsa(struct net_devi
+@@ -4248,6 +4248,51 @@
  #endif
  }
  
@@ -146,7 +146,7 @@ cat /sys/kernel/debug/mtketh/qdma_pppq
  static int mtk_device_event(struct notifier_block *n, unsigned long event, void *ptr)
  {
  	struct mtk_mac *mac = container_of(n, struct mtk_mac, device_notifier);
-@@ -4253,6 +4298,7 @@ static int mtk_device_event(struct notif
+@@ -4258,6 +4303,7 @@
  	struct list_head *iter;
  	struct dsa_port *dp;
  	unsigned int queue;
@@ -154,7 +154,7 @@ cat /sys/kernel/debug/mtketh/qdma_pppq
  
  	if (event != NETDEV_CHANGE || dev->priv_flags & IFF_EBRIDGE)
  		return NOTIFY_DONE;
-@@ -4277,8 +4323,15 @@ found:
+@@ -4282,8 +4328,15 @@
  		return NOTIFY_DONE;
  
  	if (dsa_slave_dev_check(dev)) {
@@ -171,7 +171,7 @@ cat /sys/kernel/debug/mtketh/qdma_pppq
  	} else
  		queue = mac->id;
  
-@@ -6090,13 +6143,15 @@ static u16 mtk_select_queue(struct net_d
+@@ -6190,13 +6243,15 @@
  			    struct net_device *sb_dev)
  {
  	struct mtk_mac *mac = netdev_priv(dev);
@@ -191,7 +191,7 @@ cat /sys/kernel/debug/mtketh/qdma_pppq
  
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1709,6 +1709,7 @@ struct mtk_soc_data {
+@@ -1710,6 +1710,7 @@
   * @pending_work:	The workqueue used to reset the dma ring
   * @state:		Initialization and runtime state of the device
   * @soc:		Holding specific data among vaious SoCs
@@ -199,7 +199,7 @@ cat /sys/kernel/debug/mtketh/qdma_pppq
   */
  
  struct mtk_eth {
-@@ -1729,6 +1730,7 @@ struct mtk_eth {
+@@ -1731,6 +1732,7 @@
  	int				irq_fe[MTK_FE_IRQ_NUM];
  	int				irq_pdma[MTK_PDMA_IRQ_NUM];
  	u32				msg_enable;
@@ -207,7 +207,7 @@ cat /sys/kernel/debug/mtketh/qdma_pppq
  	unsigned long			sysclk;
  	struct regmap			*ethsys;
  	struct regmap			*infra;
-@@ -1811,6 +1813,7 @@ struct mtk_eth {
+@@ -1815,6 +1817,7 @@
   * @of_node:		Our devicetree node
   * @hw:			Backpointer to our main datastruture
   * @hw_stats:		Packet statistics counter
@@ -215,7 +215,7 @@ cat /sys/kernel/debug/mtketh/qdma_pppq
   */
  struct mtk_mac {
  	int				id;
-@@ -1838,6 +1841,7 @@ struct mtk_mac {
+@@ -1842,6 +1845,7 @@
  	struct sk_buff			*ptp_tx_skb;
  	unsigned long			ptp_tx_start;
  	unsigned int			ptp_tx_class;
@@ -223,7 +223,7 @@ cat /sys/kernel/debug/mtketh/qdma_pppq
  };
  
  #define MTK_MUX_CHANNELS_MAX	2
-@@ -2023,4 +2027,7 @@ void mtk_eth_set_dma_device(struct mtk_e
+@@ -2027,4 +2031,7 @@
  bool mtk_shaper_is_available(struct mtk_eth *eth, int idx);
  void mtk_shaper_update_refcnt(struct mtk_eth *eth, int idx, bool add);
  

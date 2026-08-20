@@ -20,7 +20,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -1689,7 +1689,7 @@ EXPORT_SYMBOL(phy_ethtool_get_eee);
+@@ -1702,7 +1702,7 @@
   * phy_ethtool_set_eee_noneg - Adjusts MAC LPI configuration without PHY
   *			       renegotiation
   * @phydev: pointer to the target PHY device structure
@@ -29,22 +29,23 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
   *
   * This function updates the Energy Efficient Ethernet (EEE) configuration
   * for cases where only the MAC's Low Power Idle (LPI) configuration changes,
-@@ -1700,11 +1700,10 @@ EXPORT_SYMBOL(phy_ethtool_get_eee);
+@@ -1713,11 +1713,10 @@
   * configuration.
   */
  static void phy_ethtool_set_eee_noneg(struct phy_device *phydev,
 -				      struct ethtool_keee *data)
-+				      const struct eee_config *old_cfg)
- {
+-{
 -	if (phydev->eee_cfg.tx_lpi_enabled != data->tx_lpi_enabled ||
 -	    phydev->eee_cfg.tx_lpi_timer != data->tx_lpi_timer) {
 -		eee_to_eeecfg(&phydev->eee_cfg, data);
++				      const struct eee_config *old_cfg)
++{
 +	if (phydev->eee_cfg.tx_lpi_enabled != old_cfg->tx_lpi_enabled ||
 +	    phydev->eee_cfg.tx_lpi_timer != old_cfg->tx_lpi_timer) {
  		phydev->enable_tx_lpi = eeecfg_mac_can_tx_lpi(&phydev->eee_cfg);
  		if (phydev->link) {
  			phydev->link = false;
-@@ -1724,18 +1723,23 @@ static void phy_ethtool_set_eee_noneg(st
+@@ -1737,18 +1736,23 @@
   */
  int phy_ethtool_set_eee(struct phy_device *phydev, struct ethtool_keee *data)
  {

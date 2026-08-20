@@ -19,7 +19,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -5205,6 +5205,54 @@ static void mt7988_esw_force_link(struct
+@@ -5236,6 +5236,54 @@
  	__raw_writel(val, eth->esw_base + MT753X_PMCR_P(6));
  }
  
@@ -74,7 +74,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  static void mtk_prepare_for_reset(struct mtk_eth *eth)
  {
  	struct mtk_mac *mac;
-@@ -5257,6 +5305,7 @@ static void mtk_pending_work(struct work
+@@ -5288,6 +5336,7 @@
  
  	mtk_hw_dump_all(eth);
  
@@ -82,7 +82,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	mtk_prepare_for_reset(eth);
  	mtk_wed_fe_reset();
  	/* Run again reset preliminary configuration in order to avoid any
-@@ -5300,6 +5349,7 @@ static void mtk_pending_work(struct work
+@@ -5331,6 +5380,7 @@
  	clear_bit(MTK_RESETTING, &eth->state);
  
  	mtk_wed_fe_reset_complete();
@@ -92,7 +92,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  }
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1179,6 +1179,21 @@ struct mtk_napi {
+@@ -1180,6 +1180,21 @@
  	struct mtk_rx_ring	*rx_ring;
  };
  
@@ -114,7 +114,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  enum mkt_eth_capabilities {
  	MTK_RGMII_BIT = 0,
  	MTK_TRGMII_BIT,
-@@ -1589,6 +1604,7 @@ struct mtk_eth {
+@@ -1590,6 +1605,7 @@
  	struct napi_struct		tx_napi;
  	struct mtk_napi			rx_napi[MTK_RX_NAPI_NUM];
  	struct mtk_rss_params		rss_params;

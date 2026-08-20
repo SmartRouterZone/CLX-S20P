@@ -11,22 +11,23 @@ diff --git a/net/8021q/vlan_dev.c b/net/8021q/vlan_dev.c
 index 3cecafc..11170bc 100644
 --- a/net/8021q/vlan_dev.c
 +++ b/net/8021q/vlan_dev.c
-@@ -28,6 +28,11 @@
+@@ -27,6 +27,11 @@
+ #include <linux/phy.h>
  #include <net/arp.h>
  #include <net/macsec.h>
- 
++
 +#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
 +#include <linux/netfilter.h>
 +#include <net/netfilter/nf_flow_table.h>
 +#endif
-+
+ 
  #include "vlan.h"
  #include "vlanproc.h"
- #include <linux/if_vlan.h>
-@@ -1001,6 +1006,27 @@ static const struct macsec_ops macsec_offload_ops = {
+@@ -1033,6 +1038,27 @@
+ };
  
  #endif
- 
++
 +#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
 +static int vlan_dev_flow_offload_check(struct flow_offload_hw_path *path)
 +{
@@ -47,11 +48,10 @@ index 3cecafc..11170bc 100644
 +	return 0;
 +}
 +#endif /* CONFIG_NF_FLOW_TABLE */
-+
+ 
  static const struct ethtool_ops vlan_ethtool_ops = {
  	.get_link_ksettings	= vlan_ethtool_get_link_ksettings,
- 	.get_drvinfo	        = vlan_ethtool_get_drvinfo,
-@@ -1040,6 +1066,9 @@ static const struct net_device_ops vlan_netdev_ops = {
+@@ -1073,6 +1099,9 @@
  	.ndo_fix_features	= vlan_dev_fix_features,
  	.ndo_get_iflink		= vlan_dev_get_iflink,
  	.ndo_fill_forward_path	= vlan_dev_fill_forward_path,

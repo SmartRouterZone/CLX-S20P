@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -5445,7 +5445,7 @@ static int mtk_set_rxfh(struct net_devic
+@@ -5476,7 +5476,7 @@
  	return 0;
  }
  
@@ -9,7 +9,7 @@
  {
  	struct mtk_mac *mac = netdev_priv(dev);
  	u32 reg;
-@@ -5465,7 +5465,7 @@ static int mtk_get_eee(struct net_device
+@@ -5496,7 +5496,7 @@
  	return 0;
  }
  
@@ -20,7 +20,7 @@
  	int ret;
 --- a/net/dsa/slave.c
 +++ b/net/dsa/slave.c
-@@ -1238,7 +1238,7 @@ static int dsa_slave_set_wol(struct net_
+@@ -1238,7 +1238,7 @@
  	return ret;
  }
  
@@ -29,7 +29,7 @@
  {
  	struct dsa_port *dp = dsa_slave_to_port(dev);
  	struct dsa_switch *ds = dp->ds;
-@@ -1258,7 +1258,7 @@ static int dsa_slave_set_eee(struct net_
+@@ -1258,7 +1258,7 @@
  	return phylink_ethtool_set_eee(dp->pl, e);
  }
  

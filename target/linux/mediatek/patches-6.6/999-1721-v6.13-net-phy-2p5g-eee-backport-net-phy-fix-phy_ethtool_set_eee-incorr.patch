@@ -42,7 +42,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/phy/phy-c45.c
 +++ b/drivers/net/phy/phy-c45.c
-@@ -1530,7 +1530,7 @@ int genphy_c45_ethtool_get_eee(struct ph
+@@ -1530,7 +1530,7 @@
  		return ret;
  
  	data->eee_enabled = is_enabled;
@@ -53,7 +53,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	return 0;
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -971,14 +971,14 @@ static int phy_check_link_status(struct
+@@ -971,14 +971,14 @@
  		phydev->state = PHY_RUNNING;
  		err = genphy_c45_eee_is_active(phydev,
  					       NULL, NULL, NULL);
@@ -72,7 +72,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		phydev->enable_tx_lpi = false;
  		phy_link_down(phydev);
  	}
-@@ -1702,15 +1702,21 @@ EXPORT_SYMBOL(phy_ethtool_get_eee);
+@@ -1715,15 +1715,21 @@
  static void phy_ethtool_set_eee_noneg(struct phy_device *phydev,
  				      const struct eee_config *old_cfg)
  {
@@ -104,7 +104,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -596,6 +596,7 @@ struct macsec_ops;
+@@ -596,6 +596,7 @@
   * @supported_eee: supported PHY EEE linkmodes
   * @advertising_eee: Currently advertised EEE linkmodes
   * @enable_tx_lpi: When True, MAC should transmit LPI to PHY
@@ -112,7 +112,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
   * @eee_cfg: User configuration of EEE
   * @lp_advertising: Current link partner advertised linkmodes
   * @host_interfaces: PHY interface modes supported by host
-@@ -712,6 +713,7 @@ struct phy_device {
+@@ -712,6 +713,7 @@
  	/* Energy efficient ethernet modes which should be prohibited */
  	__ETHTOOL_DECLARE_LINK_MODE_MASK(eee_broken_modes);
  	bool enable_tx_lpi;

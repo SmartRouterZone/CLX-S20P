@@ -36,15 +36,17 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  {
 -	struct spi_mem_op op = SPINAND_GET_FEATURE_OP(reg,
 -						      spinand->scratchbuf);
+-	int ret;
+-
 +	struct spi_mem_op op;
- 	int ret;
- 
++	int ret;
++
 +	op = (struct spi_mem_op) SPINAND_GET_FEATURE_OP(reg,
 +							spinand->scratchbuf);
  	ret = spi_mem_exec_op(spinand->spimem, &op);
  	if (ret)
  		return ret;
-@@ -37,8 +43,10 @@ static int spinand_read_reg_op(struct sp
+@@ -37,8 +43,10 @@
  
  static int spinand_write_reg_op(struct spinand_device *spinand, u8 reg, u8 val)
  {
@@ -57,10 +59,12 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  
  	*spinand->scratchbuf = val;
  	return spi_mem_exec_op(spinand->spimem, &op);
-@@ -201,6 +209,62 @@ static int spinand_ecc_enable(struct spi
+@@ -199,6 +207,62 @@
+ {
+ 	return spinand_upd_cfg(spinand, CFG_ECC_ENABLE,
  			       enable ? CFG_ECC_ENABLE : 0);
- }
- 
++}
++
 +static size_t eccsr_none_op(size_t val, size_t mask) { return val; }
 +static size_t eccsr_and_op(size_t val, size_t mask) { return val & mask; }
 +static size_t eccsr_add_op(size_t val, size_t mask) { return val + mask; }
@@ -115,12 +119,10 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +	eccsr = spinand->eccsr_math_op[spinand->advecc_post_op](eccsr, spinand->advecc_post_mask);
 +
 +	return eccsr > mtd->ecc_strength ? mtd->ecc_strength : eccsr;
-+}
-+
+ }
+ 
  static int spinand_check_ecc_status(struct spinand_device *spinand, u8 status)
- {
- 	struct nand_device *nand = spinand_to_nand(spinand);
-@@ -1033,6 +1097,242 @@ int spinand_cal_read(void *priv, u32 *ad
+@@ -1039,6 +1103,242 @@
  	return 0;
  }
  
@@ -363,7 +365,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static int spinand_id_detect(struct spinand_device *spinand)
  {
  	u8 *id = spinand->id.data;
-@@ -1064,7 +1364,7 @@ static int spinand_id_detect(struct spin
+@@ -1070,7 +1370,7 @@
  
  static int spinand_manufacturer_init(struct spinand_device *spinand)
  {
@@ -372,7 +374,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  		return spinand->manufacturer->ops->init(spinand);
  
  	return 0;
-@@ -1073,7 +1373,7 @@ static int spinand_manufacturer_init(str
+@@ -1079,7 +1379,7 @@
  static void spinand_manufacturer_cleanup(struct spinand_device *spinand)
  {
  	/* Release manufacturer private data */
@@ -381,7 +383,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  		return spinand->manufacturer->ops->cleanup(spinand);
  }
  
-@@ -1176,37 +1476,456 @@ int spinand_match_and_init(struct spinan
+@@ -1184,37 +1484,456 @@
  	return -ENOTSUPP;
  }
  
@@ -765,9 +767,9 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +
  static int spinand_detect(struct spinand_device *spinand)
  {
--	struct device *dev = &spinand->spimem->spi->dev;
- 	struct nand_device *nand = spinand_to_nand(spinand);
-+	struct device *dev = &spinand->spimem->spi->dev;
++	struct nand_device *nand = spinand_to_nand(spinand);
+ 	struct device *dev = &spinand->spimem->spi->dev;
+-	struct nand_device *nand = spinand_to_nand(spinand);
 +	struct nand_casn *casn;
 +	char manufacturer[14];
 +	unsigned int sel = 0;
@@ -821,6 +823,10 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  		dev_err(dev,
  			"SPI NANDs with more than one die must implement ->select_target()\n");
 -		return -EINVAL;
+-	}
+-
+-	dev_info(&spinand->spimem->spi->dev,
+-		 "%s SPI NAND was found.\n", spinand->manufacturer->name);
 +		ret = -EINVAL;
 +		goto free_casn;
 +	}
@@ -831,10 +837,8 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +	} else {
 +		dev_info(&spinand->spimem->spi->dev,
 +			 "%s SPI NAND was found.\n", spinand->manufacturer->name);
- 	}
- 
--	dev_info(&spinand->spimem->spi->dev,
--		 "%s SPI NAND was found.\n", spinand->manufacturer->name);
++	}
++
  	dev_info(&spinand->spimem->spi->dev,
  		 "%llu MiB, block size: %zu KiB, page size: %zu, OOB size: %u\n",
  		 nanddev_size(nand) >> 20, nanddev_eraseblock_size(nand) >> 10,
@@ -850,10 +854,11 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static int spinand_init_flash(struct spinand_device *spinand)
 --- a/include/linux/mtd/spinand.h
 +++ b/include/linux/mtd/spinand.h
-@@ -62,6 +62,59 @@
+@@ -61,6 +61,59 @@
+ 		   SPI_MEM_OP_ADDR(3, addr, 1),				\
  		   SPI_MEM_OP_NO_DUMMY,					\
  		   SPI_MEM_OP_NO_DATA)
- 
++
 +/* Macros for CASN */
 +#define SPINAND_CASN_PAGE_READ_FROM_CACHE_OP(fast, naddr, addr, ndummy, buf, len) \
 +	SPI_MEM_OP(SPI_MEM_OP_CMD(fast ? 0x0b : 0x03, 1),		\
@@ -906,11 +911,10 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +				    casn_adv_ecc_status.dummy_buswidth),	\
 +		   SPI_MEM_OP_DATA_IN(casn_adv_ecc_status.status_nbytes, buf, 1))
 +/* Macros for CASN end */
-+
+ 
  #define SPINAND_PAGE_READ_FROM_CACHE_OP(fast, addr, ndummy, buf, len)	\
  	SPI_MEM_OP(SPI_MEM_OP_CMD(fast ? 0x0b : 0x03, 1),		\
- 		   SPI_MEM_OP_ADDR(2, addr, 1),				\
-@@ -314,6 +367,12 @@ struct spinand_ecc_info {
+@@ -317,6 +370,12 @@
  
  #define SPINAND_HAS_QE_BIT		BIT(0)
  #define SPINAND_HAS_CR_FEAT_BIT		BIT(1)
@@ -923,10 +927,13 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  
  /**
   * struct spinand_ondie_ecc_conf - private SPI-NAND on-die ECC engine structure
-@@ -401,6 +460,28 @@ struct spinand_dirmap {
- };
- 
- /**
+@@ -401,6 +460,28 @@
+ 	struct spi_mem_dirmap_desc *rdesc;
+ 	struct spi_mem_dirmap_desc *wdesc_ecc;
+ 	struct spi_mem_dirmap_desc *rdesc_ecc;
++};
++
++/**
 + * struct CASN_ADVECC - CASN's advanced ECC description
 + * @cmd: Command to access SPI-NAND on-chip ECC status registers
 + * @mask: Mask to access SPI-NAND on-chip ECC status registers.
@@ -946,13 +953,10 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +	u8 shift;
 +	u8 pre_op;
 +	u8 pre_mask;
-+};
-+
-+/**
-  * struct spinand_device - SPI NAND device instance
-  * @base: NAND device instance
-  * @spimem: pointer to the SPI mem object
-@@ -452,6 +533,23 @@ struct spinand_device {
+ };
+ 
+ /**
+@@ -455,6 +536,23 @@
  	u8 *oobbuf;
  	u8 *scratchbuf;
  	const struct spinand_manufacturer *manufacturer;
@@ -976,7 +980,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  	void *priv;
  };
  
-@@ -522,3 +620,4 @@ int spinand_upd_cfg(struct spinand_devic
+@@ -525,3 +623,4 @@
  int spinand_select_target(struct spinand_device *spinand, unsigned int target);
  
  #endif /* __LINUX_MTD_SPINAND_H */

@@ -15,7 +15,7 @@ diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
 index 8474099..427f754 100644
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -565,6 +565,7 @@ unsigned int __clk_get_enable_count(struct clk *clk)
+@@ -565,6 +565,7 @@
  {
  	return !clk ? 0 : clk->core->enable_count;
  }
@@ -23,11 +23,9 @@ index 8474099..427f754 100644
  
  static unsigned long clk_core_get_rate_nolock(struct clk_core *core)
  {
-diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
-index 17c6de7..223db6f 100644
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -166,6 +166,12 @@ config AIR_EN8811H_PHY
+@@ -164,6 +164,12 @@
  	help
  	  Currently supports the Airoha EN8811H PHY.
  
@@ -40,8 +38,6 @@ index 17c6de7..223db6f 100644
  config AMD_PHY
  	tristate "AMD and Altima PHYs"
  	help
-diff --git a/drivers/net/phy/air_en8811h.c b/drivers/net/phy/air_en8811h.c
-index 3cdc8c6..2b26933 100644
 --- a/drivers/net/phy/air_en8811h.c
 +++ b/drivers/net/phy/air_en8811h.c
 @@ -11,11 +11,16 @@
@@ -71,19 +67,19 @@ index 3cdc8c6..2b26933 100644
  #define EN8811H_2P5G_LPA		0x3b30
  #define   EN8811H_2P5G_LPA_2P5G			BIT(0)
  
-@@ -115,6 +123,12 @@
+@@ -114,6 +122,12 @@
+ 
  #define EN8811H_GPIO_OUTPUT		0xcf8b8
  #define   EN8811H_GPIO_OUTPUT_345		(BIT(3) | BIT(4) | BIT(5))
- 
++
 +#define EN8811H_HWTRAP1		0xcf914
 +#define EN8811H_HWTRAP1_CKO		BIT(12)
 +
 +#define EN8811H_CLK_CGM		0xcf958
 +#define EN8811H_CLK_CGM_CKO		BIT(26)
-+
+ 
  #define EN8811H_FW_CTRL_1		0x0f0018
  #define   EN8811H_FW_CTRL_1_START		0x0
- #define   EN8811H_FW_CTRL_1_FINISH		0x1
 @@ -126,8 +140,8 @@
  
  /* Default LED setup:
@@ -95,7 +91,7 @@ index 3cdc8c6..2b26933 100644
   */
  #define AIR_DEFAULT_TRIGGER_LED0 (BIT(TRIGGER_NETDEV_LINK)      | \
  				  BIT(TRIGGER_NETDEV_RX)        | \
-@@ -142,10 +156,36 @@ struct led {
+@@ -142,10 +156,36 @@
  	unsigned long state;
  };
  
@@ -135,7 +131,7 @@ index 3cdc8c6..2b26933 100644
  };
  
  enum {
-@@ -177,7 +217,7 @@ enum {
+@@ -177,7 +217,7 @@
  	AIR_LED_MODE_USER_DEFINE,
  };
  
@@ -144,7 +140,7 @@ index 3cdc8c6..2b26933 100644
  #define AIR_PHY_LED_DUR (AIR_PHY_LED_DUR_UNIT << AIR_PHY_LED_DUR_BLINK_64MS)
  
  static const unsigned long en8811h_led_trig = BIT(TRIGGER_NETDEV_FULL_DUPLEX) |
-@@ -188,6 +228,17 @@ static const unsigned long en8811h_led_trig = BIT(TRIGGER_NETDEV_FULL_DUPLEX) |
+@@ -188,6 +228,17 @@
  					      BIT(TRIGGER_NETDEV_LINK_2500)   |
  					      BIT(TRIGGER_NETDEV_RX)          |
  					      BIT(TRIGGER_NETDEV_TX);
@@ -162,7 +158,7 @@ index 3cdc8c6..2b26933 100644
  
  static int air_phy_read_page(struct phy_device *phydev)
  {
-@@ -457,11 +508,15 @@ static int en8811h_load_firmware(struct phy_device *phydev)
+@@ -457,11 +508,15 @@
  	ret = request_firmware_direct(&fw1, EN8811H_MD32_DM, dev);
  	if (ret < 0)
  		return ret;
@@ -180,20 +176,20 @@ index 3cdc8c6..2b26933 100644
  	ret = air_buckpbus_reg_write(phydev, EN8811H_FW_CTRL_1,
  				     EN8811H_FW_CTRL_1_START);
  	if (ret < 0)
-@@ -486,6 +541,12 @@ static int en8811h_load_firmware(struct phy_device *phydev)
+@@ -485,6 +540,12 @@
+ 				      EN8811H_FW_CTRL_2_LOADING, 0);
  	if (ret < 0)
  		goto en8811h_load_firmware_out;
- 
++
 +	ret = air_buckpbus_reg_modify(phydev, EN8811H_CONTROL,
 +				      EN8811H_CONTROL_INTERNAL,
 +				      EN8811H_CONTROL_INTERNAL);
 +	if (ret < 0)
 +		return ret;
-+
+ 
  	ret = air_buckpbus_reg_write(phydev, EN8811H_FW_CTRL_1,
  				     EN8811H_FW_CTRL_1_FINISH);
- 	if (ret < 0)
-@@ -514,11 +575,21 @@ static int en8811h_restart_mcu(struct phy_device *phydev)
+@@ -514,8 +575,18 @@
  {
  	int ret;
  
@@ -203,30 +199,27 @@ index 3cdc8c6..2b26933 100644
 +
  	ret = air_buckpbus_reg_write(phydev, EN8811H_FW_CTRL_1,
  				     EN8811H_FW_CTRL_1_START);
- 	if (ret < 0)
- 		return ret;
- 
-+	ret = air_buckpbus_reg_modify(phydev, EN8811H_CONTROL,
-+				      EN8811H_CONTROL_INTERNAL,
-+				      EN8811H_CONTROL_INTERNAL);
 +	if (ret < 0)
 +		return ret;
 +
- 	ret = air_buckpbus_reg_write(phydev, EN8811H_FW_CTRL_1,
- 				     EN8811H_FW_CTRL_1_FINISH);
++	ret = air_buckpbus_reg_modify(phydev, EN8811H_CONTROL,
++				      EN8811H_CONTROL_INTERNAL,
++				      EN8811H_CONTROL_INTERNAL);
  	if (ret < 0)
-@@ -544,10 +615,6 @@ static int air_hw_led_on_set(struct phy_device *phydev, u8 index, bool on)
+ 		return ret;
+ 
+@@ -543,10 +614,6 @@
+ 					       &priv->led[index].state);
  
  	changed |= (priv->led[index].rules != 0);
- 
+-
 -	/* clear netdev trigger rules in case LED_OFF has been set */
 -	if (!on)
 -		priv->led[index].rules = 0;
--
+ 
  	if (changed)
  		return phy_modify_mmd(phydev, MDIO_MMD_VEND2,
- 				      AIR_PHY_LED_ON(index),
-@@ -806,9 +873,98 @@ static int en8811h_led_hw_is_supported(struct phy_device *phydev, u8 index,
+@@ -806,9 +873,98 @@
  	return 0;
  };
  
@@ -325,7 +318,7 @@ index 3cdc8c6..2b26933 100644
  	int ret;
  
  	priv = devm_kzalloc(&phydev->mdio.dev, sizeof(struct en8811h_priv),
-@@ -817,12 +973,18 @@ static int en8811h_probe(struct phy_device *phydev)
+@@ -817,12 +973,18 @@
  		return -ENOMEM;
  	phydev->priv = priv;
  
@@ -344,7 +337,7 @@ index 3cdc8c6..2b26933 100644
  
  	priv->led[0].rules = AIR_DEFAULT_TRIGGER_LED0;
  	priv->led[1].rules = AIR_DEFAULT_TRIGGER_LED1;
-@@ -830,6 +992,13 @@ static int en8811h_probe(struct phy_device *phydev)
+@@ -830,6 +992,13 @@
  
  	/* MDIO_DEVS1/2 empty, so set mmds_present bits here */
  	phydev->c45_ids.mmds_present |= MDIO_DEVS_PMAPMD | MDIO_DEVS_AN;
@@ -358,7 +351,7 @@ index 3cdc8c6..2b26933 100644
  
  	ret = air_leds_init(phydev, EN8811H_LED_COUNT, AIR_PHY_LED_DUR,
  			    AIR_LED_MODE_DISABLE);
-@@ -838,6 +1007,12 @@ static int en8811h_probe(struct phy_device *phydev)
+@@ -838,6 +1007,12 @@
  		return ret;
  	}
  
@@ -371,7 +364,7 @@ index 3cdc8c6..2b26933 100644
  	/* Configure led gpio pins as output */
  	ret = air_buckpbus_reg_modify(phydev, EN8811H_GPIO_OUTPUT,
  				      EN8811H_GPIO_OUTPUT_345,
-@@ -845,6 +1020,51 @@ static int en8811h_probe(struct phy_device *phydev)
+@@ -845,6 +1020,51 @@
  	if (ret < 0)
  		return ret;
  
@@ -423,7 +416,7 @@ index 3cdc8c6..2b26933 100644
  	return 0;
  }
  
-@@ -855,19 +1075,22 @@ static int en8811h_config_init(struct phy_device *phydev)
+@@ -855,19 +1075,22 @@
  	u32 pbus_value;
  	int ret;
  
@@ -449,7 +442,7 @@ index 3cdc8c6..2b26933 100644
  	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, AIR_PHY_MCU_CMD_1,
  			    AIR_PHY_MCU_CMD_1_MODE1);
  	if (ret < 0)
-@@ -908,6 +1131,34 @@ static int en8811h_config_init(struct phy_device *phydev)
+@@ -908,6 +1131,34 @@
  		return ret;
  	}
  
@@ -484,17 +477,17 @@ index 3cdc8c6..2b26933 100644
  	return 0;
  }
  
-@@ -983,6 +1234,9 @@ static int en8811h_read_status(struct phy_device *phydev)
+@@ -982,6 +1233,9 @@
+ 	linkmode_mod_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
  			 phydev->lp_advertising,
  			 pbus_value & EN8811H_2P5G_LPA_2P5G);
- 
++
 +	/* Only supports full duplex */
 +	phydev->duplex = DUPLEX_FULL;
-+
+ 
  	if (phydev->autoneg_complete)
  		phy_resolve_aneg_pause(phydev);
- 
-@@ -1014,9 +1268,6 @@ static int en8811h_read_status(struct phy_device *phydev)
+@@ -1014,9 +1268,6 @@
  				 phydev->speed == SPEED_2500);
  	}
  
@@ -504,7 +497,7 @@ index 3cdc8c6..2b26933 100644
  	return 0;
  }
  
-@@ -1052,11 +1303,34 @@ static irqreturn_t en8811h_handle_interrupt(struct phy_device *phydev)
+@@ -1052,11 +1303,34 @@
  	return IRQ_HANDLED;
  }
  
@@ -539,7 +532,7 @@ index 3cdc8c6..2b26933 100644
  	.get_features		= en8811h_get_features,
  	.config_init		= en8811h_config_init,
  	.get_rate_matching	= en8811h_get_rate_matching,
-@@ -1071,6 +1345,8 @@ static struct phy_driver en8811h_driver[] = {
+@@ -1071,6 +1345,8 @@
  	.led_brightness_set	= air_led_brightness_set,
  	.led_hw_control_set	= air_led_hw_control_set,
  	.led_hw_control_get	= air_led_hw_control_get,
@@ -548,7 +541,7 @@ index 3cdc8c6..2b26933 100644
  } };
  
  module_phy_driver(en8811h_driver);
-@@ -1080,6 +1356,1603 @@ static struct mdio_device_id __maybe_unused en8811h_tbl[] = {
+@@ -1080,6 +1356,1603 @@
  	{ }
  };
  
@@ -2152,9 +2145,6 @@ index 3cdc8c6..2b26933 100644
  MODULE_DEVICE_TABLE(mdio, en8811h_tbl);
  MODULE_FIRMWARE(EN8811H_MD32_DM);
  MODULE_FIRMWARE(EN8811H_MD32_DSP);
-diff --git a/drivers/net/phy/air_en8811h.h b/drivers/net/phy/air_en8811h.h
-new file mode 100644
-index 0000000..0b243d1
 --- /dev/null
 +++ b/drivers/net/phy/air_en8811h.h
 @@ -0,0 +1,261 @@
@@ -2419,6 +2409,6 @@ index 0000000..0b243d1
 +#endif
 +
 +#endif /* End of __EN8811H_H */
+
 -- 
 2.45.2
-

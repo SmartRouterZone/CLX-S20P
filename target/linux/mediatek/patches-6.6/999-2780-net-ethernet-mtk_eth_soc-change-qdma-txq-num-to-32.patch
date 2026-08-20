@@ -12,7 +12,7 @@ when supporting multiple switch PPPQ.
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1059,7 +1059,8 @@ static void mtk_set_queue_speed(struct m
+@@ -1060,7 +1060,8 @@
  		eth->qdma_shaper.speed[idx] = speed;
  
  out:
@@ -22,7 +22,7 @@ when supporting multiple switch PPPQ.
  	mtk_w32(eth, val, soc->reg_map->qdma.qtx_sch + ofs);
  }
  
-@@ -3074,6 +3075,8 @@ static int mtk_tx_alloc(struct mtk_eth *
+@@ -3076,6 +3077,8 @@
  		mtk_w32(eth, ring->last_free_ptr, soc->reg_map->qdma.drx_ptr);
  
  		for (i = 0, ofs = 0; i < MTK_QDMA_NUM_QUEUES; i++) {
@@ -31,7 +31,7 @@ when supporting multiple switch PPPQ.
  			val = (QDMA_RES_THRES << 8) | QDMA_RES_THRES;
  			mtk_w32(eth, val, soc->reg_map->qdma.qtx_cfg + ofs);
  
-@@ -3091,7 +3094,7 @@ static int mtk_tx_alloc(struct mtk_eth *
+@@ -3093,7 +3096,7 @@
  			if (mtk_is_netsys_v1(eth))
  				val |= MTK_QTX_SCH_LEAKY_BUCKET_EN;
  			mtk_w32(eth, val, soc->reg_map->qdma.qtx_sch + ofs);
@@ -40,7 +40,7 @@ when supporting multiple switch PPPQ.
  		}
  		val = MTK_QDMA_TX_SCH_MAX_WFQ | (MTK_QDMA_TX_SCH_MAX_WFQ << 16);
  		mtk_w32(eth, val, soc->reg_map->qdma.tx_sch_rate);
-@@ -4743,7 +4746,7 @@ static void mtk_hw_dump_all(struct mtk_e
+@@ -4770,7 +4773,7 @@
  	mtk_hw_dump_reg(eth, "ADMA", reg_map->pdma.rx_ptr, 0x300);
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA)) {
  		for (id = 0; id < MTK_QDMA_NUM_QUEUES / 16; id++) {

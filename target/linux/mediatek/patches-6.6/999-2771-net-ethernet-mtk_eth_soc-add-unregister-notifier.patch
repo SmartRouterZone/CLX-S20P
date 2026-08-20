@@ -6,7 +6,7 @@ Subject: [PATCH] net-ethernet-mtk_eth_soc-add-unregister-notifier
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -6559,6 +6559,20 @@ static int mtk_sgmii_init(struct mtk_eth
+@@ -6662,6 +6662,20 @@
  	return 0;
  }
  
@@ -27,7 +27,7 @@ Subject: [PATCH] net-ethernet-mtk_eth_soc-add-unregister-notifier
  static int mtk_probe(struct platform_device *pdev)
  {
  	struct resource *res = NULL, *res_sram;
-@@ -6949,6 +6963,7 @@ err_deinit_ppe:
+@@ -7055,6 +7069,7 @@
  	mtk_release_all_muxes(eth);
  	mtk_mdio_cleanup(eth);
  err_free_dev:
