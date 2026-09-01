@@ -33,8 +33,7 @@ endef
 TARGET_DEVICES += netcore_n60-pro-mtkuboot
 
 define Device/clx_s20p
-  DEVICE_VENDOR := CLX
-  DEVICE_MODEL := S20P
+  DEVICE_MODEL := S20P AX6000
   DEVICE_DTS := mt7986a-clx-s20p
   DEVICE_DTS_DIR := ../dts-ext
   DEVICE_PACKAGES := kmod-usb3 kmod-mmc kmod-fs-f2fs kmod-fs-ext4 kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \

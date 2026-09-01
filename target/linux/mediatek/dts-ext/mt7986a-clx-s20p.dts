@@ -9,7 +9,7 @@
 #include "mt7986a.dtsi"
 
 / {
-	model = "CLX S20P";
+	model = "S20P AX6000";
 	compatible = "clx,s20p", "mediatek,mt7986a-rfb";
 
 	aliases {
