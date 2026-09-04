@@ -7,8 +7,8 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
 ---
  drivers/net/pcs/pcs-mtk-usxgmii.c    | 168 +++++++++++++++++++--------
  include/linux/pcs/pcs-mtk-usxgmii.h  |  29 +++++
- include/linux/phy/phy-mtk-xfi-tphy.h |  23 ++++
- 3 files changed, 169 insertions(+), 51 deletions(-)
+ include/linux/phy/phy-mtk-xfi-tphy.h |  27 +++++
+ 3 files changed, 173 insertions(+), 51 deletions(-)
  create mode 100644 include/linux/phy/phy-mtk-xfi-tphy.h
 
 diff --git a/drivers/net/pcs/pcs-mtk-usxgmii.c b/drivers/net/pcs/pcs-mtk-usxgmii.c
@@ -321,11 +321,15 @@ index ef936d9..8c18c1c 100644
   * @np:		Pointer to device node indentifying a MediaTek USXGMII PCS
 diff --git a/include/linux/phy/phy-mtk-xfi-tphy.h b/include/linux/phy/phy-mtk-xfi-tphy.h
 new file mode 100644
-index 0000000..0e0ac9d
+index 0000000..fadeb30
 --- /dev/null
 +++ b/include/linux/phy/phy-mtk-xfi-tphy.h
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,27 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2025 MediaTek Inc.
++ */
++
 +#ifndef __LINUX_PHY_MTK_XFI_TPHY_H
 +#define __LINUX_PHY_MTK_XFI_TPHY_H
 +
@@ -350,4 +354,3 @@ index 0000000..0e0ac9d
 +#endif /* __LINUX_PHY_MTK_XFI_TPHY_H */
 -- 
 2.45.2
-

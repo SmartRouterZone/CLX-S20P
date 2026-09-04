@@ -1255,7 +1255,7 @@ enum FoeIpAct {
 #define IS_PPPQ_MODE (qos_toggle == 2)		/* Per Port Per Queue */
 #define IS_HQOS_DL_MODE (IS_HQOS_MODE && qos_dl_toggle)
 #define IS_HQOS_UL_MODE (IS_HQOS_MODE && qos_ul_toggle)
-#define MTK_QDMA_QUEUE_MASK	((1ULL << MTK_QDMA_NUM_QUEUES) - 1)
+#define MTK_QDMA_QUEUE_MASK	(MTK_QDMA_NUM_QUEUES - 1)
 #define MAX_SWITCH_PORT_NUM		(6)
 #if defined(CONFIG_MEDIATEK_NETSYS_V3)
 #define MAX_PPPQ_QUEUE_NUM		(2 * MAX_SWITCH_PORT_NUM + 2)
