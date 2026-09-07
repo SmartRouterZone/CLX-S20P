@@ -25,6 +25,7 @@
 #include <net/udp.h>
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_conntrack_acct.h>
+#include <net/netfilter/nf_conntrack_l4proto.h>
 
 #include "nf_hnat_mtk.h"
 #include "hnat.h"
@@ -119,23 +120,74 @@ static inline struct net_device *get_wandev_from_index(int index)
 	return NULL;
 }
 
-static inline int extif_set_dev(struct net_device *dev)
+static inline int extif_match(const char *name)
 {
 	int i;
 	struct extdev_entry *ext_entry;
 
 	for (i = 0; i < MAX_EXT_DEVS && hnat_priv->ext_if[i]; i++) {
 		ext_entry = hnat_priv->ext_if[i];
-		if (!strcmp(dev->name, ext_entry->name) && !ext_entry->dev) {
-			dev_hold(dev);
-			ext_entry->dev = dev;
-			pr_info("%s(%s)\n", __func__, dev->name);
-
-			return ext_entry->dev->ifindex;
-		}
+		if (!strcmp(name, ext_entry->name))
+			return i;
 	}
 
 	return -1;
+}
+
+static inline bool extif_prefix_match(const char *name)
+{
+	int i;
+
+	for (i = 0; i < MAX_EXT_PREFIX_NUM && hnat_priv->ext_if_prefix[i]; i++) {
+		const char *prefix = hnat_priv->ext_if_prefix[i];
+
+		if (*prefix && !strncmp(name, prefix, strlen(prefix)))
+			return true;
+	}
+
+	return false;
+}
+
+static inline int extif_set_dev(struct net_device *dev, bool try_prefix)
+{
+	struct extdev_entry *ext_entry;
+	int index;
+
+	index = extif_match(dev->name);
+	if (index >= 0) {
+		if (hnat_priv->ext_if[index]->dev == dev)
+			return dev->ifindex;
+
+		if (hnat_priv->ext_if[index]->dev)
+			return -EBUSY;
+
+		dev_hold(dev);
+		hnat_priv->ext_if[index]->dev = dev;
+		pr_info("%s(%s)\n", __func__, dev->name);
+
+		return dev->ifindex;
+	}
+
+	if (!try_prefix || !extif_prefix_match(dev->name))
+		return -1;
+
+	if (get_ext_device_number() >= MAX_EXT_DEVS) {
+		pr_info("%s: extdev array is full, %s is not registered\n",
+			__func__, dev->name);
+		return -1;
+	}
+
+	ext_entry = kzalloc(sizeof(*ext_entry), GFP_KERNEL);
+	if (!ext_entry)
+		return -ENOMEM;
+
+	strscpy(ext_entry->name, dev->name, IFNAMSIZ);
+	dev_hold(dev);
+	ext_entry->dev = dev;
+	ext_if_add(ext_entry);
+	pr_info("%s: prefix matched %s\n", __func__, dev->name);
+
+	return dev->ifindex;
 }
 
 static inline int extif_put_dev(struct net_device *dev)
@@ -365,7 +417,7 @@ int nf_hnat_netdevice_event(struct notifier_block *unused, unsigned long event,
 	case NETDEV_UP:
 		gmac_ppe_fwd_enable(dev);
 
-		extif_set_dev(dev);
+		extif_set_dev(dev, true);
 
 		break;
 	case NETDEV_CHANGE:
@@ -810,6 +862,12 @@ static inline void hnat_set_alg(const struct nf_hook_state *state,
 	skb_hnat_alg(skb) = val;
 }
 
+static inline void hnat_set_tag(const struct nf_hook_state *state,
+				struct sk_buff *skb, int val)
+{
+	skb_hnat_magic_tag(skb) = val;
+}
+
 static inline void hnat_set_head_frags(const struct nf_hook_state *state,
 				       struct sk_buff *head_skb, int val,
 				       void (*fn)(const struct nf_hook_state *state,
@@ -817,11 +875,30 @@ static inline void hnat_set_head_frags(const struct nf_hook_state *state,
 {
 	struct sk_buff *segs = skb_shinfo(head_skb)->frag_list;
 
-	fn(state, head_skb, val);
+	if (IS_SPACE_AVAILABLE_HEAD(head_skb))
+		fn(state, head_skb, val);
+
 	while (segs) {
-		fn(state, segs, val);
+		if (IS_SPACE_AVAILABLE_HEAD(segs))
+			fn(state, segs, val);
 		segs = segs->next;
 	}
+}
+
+static void hnat_flow_offload_ct_tcp(struct sk_buff *skb)
+{
+	enum ip_conntrack_info ctinfo;
+	struct nf_conn *ct;
+
+	ct = nf_ct_get(skb, &ctinfo);
+	if (!ct || nf_ct_protonum(ct) != IPPROTO_TCP ||
+	    !nf_ct_is_confirmed(ct))
+		return;
+
+	spin_lock_bh(&ct->lock);
+	if (nf_conntrack_tcp_established(ct))
+		nf_ct_set_tcp_be_liberal(ct);
+	spin_unlock_bh(&ct->lock);
 }
 
 static void ppe_fill_flow_lbl(struct foe_entry *entry, struct ipv6hdr *ip6h)
@@ -995,6 +1072,12 @@ mtk_hnat_ipv6_nf_pre_routing(void *priv, struct sk_buff *skb,
 	if (!skb)
 		goto drop;
 
+	if (!IS_WHNAT(state->in) && IS_EXT(state->in) &&
+	    IS_SPACE_AVAILABLE_HEAD(skb)) {
+		hnat_set_head_frags(state, skb, 0, hnat_set_alg);
+		hnat_set_head_frags(state, skb, HNAT_MAGIC_TAG, hnat_set_tag);
+	}
+
 	if (!is_magic_tag_valid(skb))
 		return NF_ACCEPT;
 
@@ -1111,6 +1194,12 @@ mtk_hnat_ipv4_nf_pre_routing(void *priv, struct sk_buff *skb,
 	if (!skb)
 		goto drop;
 
+	if (!IS_WHNAT(state->in) && IS_EXT(state->in) &&
+	    IS_SPACE_AVAILABLE_HEAD(skb)) {
+		hnat_set_head_frags(state, skb, 0, hnat_set_alg);
+		hnat_set_head_frags(state, skb, HNAT_MAGIC_TAG, hnat_set_tag);
+	}
+
 	if (!is_magic_tag_valid(skb))
 		return NF_ACCEPT;
 
@@ -1194,6 +1283,12 @@ mtk_hnat_br_nf_local_in(void *priv, struct sk_buff *skb,
 
 	if (!skb)
 		goto drop;
+
+	if (!IS_WHNAT(state->in) && IS_EXT(state->in) &&
+	    IS_SPACE_AVAILABLE_HEAD(skb)) {
+		hnat_set_head_frags(state, skb, 0, hnat_set_alg);
+		hnat_set_head_frags(state, skb, HNAT_MAGIC_TAG, hnat_set_tag);
+	}
 
 	if (!is_magic_tag_valid(skb))
 		return NF_ACCEPT;
@@ -1914,6 +2009,7 @@ hnat_skip_fill_inner:
 	spin_lock(&hnat_priv->entry_lock);
 	hnat_foe_entry_commit(foe, &entry, BIND);
 	spin_unlock(&hnat_priv->entry_lock);
+	hnat_flow_offload_ct_tcp(skb);
 
 	if (hnat_priv->data->per_flow_accounting &&
 	    skb_hnat_entry(skb) < hnat_priv->foe_etry_num &&
@@ -2715,6 +2811,7 @@ hnat_entry_bind:
 	}
 	hnat_foe_entry_commit(foe, &entry, BIND);
 	spin_unlock_bh(&hnat_priv->entry_lock);
+	hnat_flow_offload_ct_tcp(skb);
 
 	/* reset statistic for this entry */
 	if (hnat_priv->data->per_flow_accounting &&
@@ -3065,6 +3162,7 @@ int mtk_sw_nat_hook_tx(struct sk_buff *skb, int gmac_no)
 	}
 	hnat_foe_entry_commit(hw_entry, &entry, BIND);
 	spin_unlock_bh(&hnat_priv->entry_lock);
+	hnat_flow_offload_ct_tcp(skb);
 
 	/* reset statistic for this entry */
 	if (hnat_priv->data->per_flow_accounting) {
@@ -3174,7 +3272,7 @@ void mtk_ppe_dev_register_hook(struct net_device *dev)
 	for (i = 1; i < MAX_IF_NUM; i++) {
 		if (!hnat_priv->wifi_hook_if[i]) {
 			if (find_extif_from_devname(dev->name)) {
-				extif_set_dev(dev);
+				extif_set_dev(dev, false);
 				goto add_wifi_hook_if;
 			}
 

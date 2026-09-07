@@ -876,6 +876,7 @@ struct foe_entry {
  * TABLE_1K
  */
 #define MAX_EXT_DEVS		(0x3fU)
+#define MAX_EXT_PREFIX_NUM	8
 #define MAX_IF_NUM		64
 
 #if defined(CONFIG_MEDIATEK_NETSYS_V3)
@@ -979,6 +980,7 @@ struct mtk_hnat {
 	struct net_device *g_wandev;
 	struct net_device *wifi_hook_if[MAX_IF_NUM];
 	struct extdev_entry *ext_if[MAX_EXT_DEVS];
+	const char *ext_if_prefix[MAX_EXT_PREFIX_NUM];
 	struct timer_list hnat_sma_build_entry_timer;
 	struct timer_list hnat_reset_timestamp_timer;
 	struct timer_list hnat_mcast_check_timer;

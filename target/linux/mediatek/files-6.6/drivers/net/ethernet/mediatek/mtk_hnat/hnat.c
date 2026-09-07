@@ -1630,6 +1630,19 @@ static int hnat_probe(struct platform_device *pdev)
 		dev_info(&pdev->dev, "ext devices = %s\n", ext_entry->name);
 	}
 
+	index = 0;
+	prop = of_find_property(np, "ext-devices-prefix", NULL);
+	for (name = of_prop_next_string(prop, NULL); name;
+	     name = of_prop_next_string(prop, name), index++) {
+		if (index >= MAX_EXT_PREFIX_NUM) {
+			dev_warn(&pdev->dev, "too many ext device prefixes\n");
+			break;
+		}
+
+		hnat_priv->ext_if_prefix[index] = name;
+		dev_info(&pdev->dev, "ext device prefix = %s\n", name);
+	}
+
 	hnat_priv->lvid = 1;
 	hnat_priv->wvid = 2;
 
