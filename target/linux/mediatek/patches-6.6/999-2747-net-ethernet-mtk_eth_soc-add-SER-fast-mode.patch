@@ -20,7 +20,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -814,6 +814,7 @@ static void mtk_mac_config(struct phylin
+@@ -814,6 +814,7 @@
  		}
  	}
  
@@ -28,7 +28,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	mac->interface = state->interface;
  	mtk_set_mcr_max_rx(mac, MTK_MAX_RX_LENGTH);
  
-@@ -1184,6 +1185,9 @@ static void mtk_mac_link_up(struct phyli
+@@ -1184,6 +1185,9 @@
  					   phylink_config);
  
  	mac->speed = speed;
@@ -38,8 +38,8 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	if (mtk_is_netsys_v3_or_greater(mac->hw) && mtk_interface_mode_is_xgmii(interface))
  		mtk_xgdm_mac_link_up(mac, phy, mode, interface, speed, duplex,
  				     tx_pause, rx_pause);
-@@ -4217,6 +4221,68 @@ found:
- 	return NOTIFY_DONE;
+@@ -4232,6 +4236,68 @@
+ 	return max_mtu;
  }
  
 +static bool mtk_phy_should_powerdown(struct mtk_eth *eth)
@@ -107,7 +107,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  static int mtk_open(struct net_device *dev)
  {
  	struct mtk_mac *mac = netdev_priv(dev);
-@@ -4226,13 +4292,6 @@ static int mtk_open(struct net_device *d
+@@ -4241,13 +4307,6 @@
  
  	ppe_num = eth->soc->ppe_num;
  
@@ -121,7 +121,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	/* we run 2 netdevs on the same dma ring so we only bring it up once */
  	if (!refcount_read(&eth->dma_refcnt)) {
  		const struct mtk_soc_data *soc = eth->soc;
-@@ -4240,10 +4299,8 @@ static int mtk_open(struct net_device *d
+@@ -4255,10 +4314,8 @@
  		int i;
  
  		err = mtk_start_dma(eth);
@@ -133,7 +133,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  
  #if !defined(CONFIG_NET_MEDIATEK_HNAT) && !defined(CONFIG_NET_MEDIATEK_HNAT_MODULE)
  		for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
-@@ -4298,7 +4355,20 @@ static int mtk_open(struct net_device *d
+@@ -4317,7 +4374,20 @@
  		refcount_inc(&eth->dma_refcnt);
  	}
  
@@ -155,7 +155,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	netif_tx_start_all_queues(dev);
  
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_NETSYS_RX_9K) &&
-@@ -4372,11 +4442,17 @@ static int mtk_stop(struct net_device *d
+@@ -4391,11 +4461,17 @@
  	struct mtk_eth *eth = mac->hw;
  	int i;
  
@@ -176,7 +176,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  
  	/* only shutdown DMA if this is the last user */
  	if (!refcount_dec_and_test(&eth->dma_refcnt))
-@@ -4727,8 +4803,11 @@ static void mtk_hw_warm_reset(struct mtk
+@@ -4755,8 +4831,11 @@
  		return;
  	}
  
@@ -189,7 +189,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  		if (MTK_HAS_CAPS(eth->soc->caps, MTK_RSTCTRL_PPE1))
  			rst_mask |= RSTCTRL_PPE1_V3;
  		if (MTK_HAS_CAPS(eth->soc->caps, MTK_RSTCTRL_PPE2))
-@@ -4736,11 +4815,11 @@ static void mtk_hw_warm_reset(struct mtk
+@@ -4764,11 +4843,11 @@
  
  		rst_mask |= RSTCTRL_WDMA0 | RSTCTRL_WDMA1 | RSTCTRL_WDMA2;
  	} else if (mtk_is_netsys_v2_or_greater(eth)) {
@@ -203,7 +203,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	}
  
  	regmap_update_bits(eth->ethsys, ETHSYS_RSTCTRL, rst_mask, rst_mask);
-@@ -5486,6 +5565,8 @@ static void mtk_pending_work(struct work
+@@ -5520,6 +5599,8 @@
  			mt7988_esw_force_link(eth, true);
  	}
  
@@ -214,7 +214,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	mtk_wed_fe_reset_complete();
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1746,9 +1746,13 @@ struct mtk_eth {
+@@ -1748,9 +1748,13 @@
   */
  struct mtk_mac {
  	int				id;

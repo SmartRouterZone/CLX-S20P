@@ -1949,6 +1949,18 @@ define Device/routerich_ax3000-v1
 endef
 TARGET_DEVICES += routerich_ax3000-v1
 
+define Device/ruijie_rg-x60
+  DEVICE_VENDOR := Ruijie
+  DEVICE_MODEL := RG-X60
+  DEVICE_DTS := mt7986a-ruijie-rg-x60
+  DEVICE_DTS_CONFIG := config@ruijie_x60_gsw_en8811h_phy
+  DEVICE_DTS_DIR := ../dts
+  SUPPORTED_DEVICES += X60
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware kmod-phy-airoha-en8811h
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += ruijie_rg-x60
+
 define Device/ruijie_rg-x60-pro
   DEVICE_VENDOR := Ruijie
   DEVICE_MODEL := RG-X60 Pro
@@ -2408,6 +2420,23 @@ define Device/zbtlink_zbt-z8103ax
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zbtlink_zbt-z8103ax
+
+define Device/zbtlink_zbt-z8103ax-c
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-Z8103AX-C
+  DEVICE_DTS := mt7981b-zbtlink-zbt-z8103ax-c
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  KERNEL_IN_UBI := 1
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zbtlink_zbt-z8103ax-c
 
 define Device/zyxel_ex5601-t0-stock
   DEVICE_VENDOR := Zyxel

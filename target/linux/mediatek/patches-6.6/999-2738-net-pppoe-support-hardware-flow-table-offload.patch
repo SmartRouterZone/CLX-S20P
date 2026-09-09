@@ -7,11 +7,9 @@ Pass on the PPPoE session ID and the remote MAC address
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
-diff --git a/drivers/net/ppp/ppp_generic.c b/drivers/net/ppp/ppp_generic.c
-index ec2fbd1..f361b52 100644
 --- a/drivers/net/ppp/ppp_generic.c
 +++ b/drivers/net/ppp/ppp_generic.c
-@@ -53,6 +53,11 @@
+@@ -54,6 +54,11 @@
  #include <net/net_namespace.h>
  #include <net/netns/generic.h>
  
@@ -23,7 +21,7 @@ index ec2fbd1..f361b52 100644
  #define PPP_VERSION	"2.4.2"
  
  /*
-@@ -1416,6 +1421,28 @@ static int ppp_fill_forward_path(struct net_device_path_ctx *ctx,
+@@ -1631,6 +1636,28 @@
  	return chan->ops->fill_forward_path(ctx, path, chan);
  }
  
@@ -52,8 +50,8 @@ index ec2fbd1..f361b52 100644
  static const struct net_device_ops ppp_netdev_ops = {
  	.ndo_init	 = ppp_dev_init,
  	.ndo_uninit      = ppp_dev_uninit,
-@@ -1423,6 +1450,9 @@ static const struct net_device_ops ppp_netdev_ops = {
- 	.ndo_do_ioctl    = ppp_net_ioctl,
+@@ -1638,6 +1665,9 @@
+ 	.ndo_siocdevprivate = ppp_net_siocdevprivate,
  	.ndo_get_stats64 = ppp_get_stats64,
  	.ndo_fill_forward_path = ppp_fill_forward_path,
 +#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
@@ -62,8 +60,6 @@ index ec2fbd1..f361b52 100644
  };
  
  static struct device_type ppp_type = {
-diff --git a/drivers/net/ppp/pppoe.c b/drivers/net/ppp/pppoe.c
-index 7a8c246..1018464 100644
 --- a/drivers/net/ppp/pppoe.c
 +++ b/drivers/net/ppp/pppoe.c
 @@ -73,6 +73,11 @@
@@ -78,7 +74,7 @@ index 7a8c246..1018464 100644
  #include <linux/nsproxy.h>
  #include <net/net_namespace.h>
  #include <net/netns/generic.h>
-@@ -997,9 +1002,37 @@ static int pppoe_fill_forward_path(struct net_device_path_ctx *ctx,
+@@ -1001,9 +1006,37 @@
  	return 0;
  }
  
@@ -116,11 +112,9 @@ index 7a8c246..1018464 100644
  };
  
  static int pppoe_recvmsg(struct socket *sock, struct msghdr *m,
-diff --git a/include/linux/ppp_channel.h b/include/linux/ppp_channel.h
-index 91f9a92..4a1729b 100644
 --- a/include/linux/ppp_channel.h
 +++ b/include/linux/ppp_channel.h
-@@ -31,6 +31,9 @@ struct ppp_channel_ops {
+@@ -33,6 +33,9 @@
  	int	(*fill_forward_path)(struct net_device_path_ctx *,
  				     struct net_device_path *,
  				     const struct ppp_channel *);

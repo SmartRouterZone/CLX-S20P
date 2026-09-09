@@ -259,7 +259,7 @@ SVN-Revision: 35130
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -891,10 +892,10 @@ static void tcp_v6_send_response(const s
+@@ -892,10 +893,10 @@ static void tcp_v6_send_response(const s
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -295,7 +295,7 @@ SVN-Revision: 35130
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -853,12 +853,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -892,12 +892,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
@@ -312,7 +312,7 @@ SVN-Revision: 35130
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/exthdrs.c
 +++ b/net/ipv6/exthdrs.c
-@@ -982,7 +982,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
+@@ -1012,7 +1012,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
  		goto drop;
  	}
  
@@ -557,8 +557,8 @@ SVN-Revision: 35130
  static inline struct neighbour *__ipv6_neigh_lookup_noref(struct net_device *dev, const void *pkey)
 --- a/net/sched/cls_u32.c
 +++ b/net/sched/cls_u32.c
-@@ -167,7 +167,7 @@ next_knode:
- 			data = skb_header_pointer(skb, toff, 4, &hdata);
+@@ -165,7 +165,7 @@ next_knode:
+ 							  &hdata);
  			if (!data)
  				goto out;
 -			if ((*data ^ key->val) & key->mask) {
@@ -566,8 +566,8 @@ SVN-Revision: 35130
  				n = rcu_dereference_bh(n->next);
  				goto next_knode;
  			}
-@@ -218,8 +218,8 @@ check_terminal:
- 						  &hdata);
+@@ -217,8 +217,8 @@ check_terminal:
+ 							  4, &hdata);
  			if (!data)
  				goto out;
 -			sel = ht->divisor & u32_hash_fold(*data, &n->sel,
@@ -867,7 +867,7 @@ SVN-Revision: 35130
  	    iph->daddr == iph2->daddr && iph->saddr == iph2->saddr)
  		return segs;
  
-@@ -267,7 +267,7 @@ struct sk_buff *tcp_gro_lookup(struct li
+@@ -268,7 +268,7 @@ struct sk_buff *tcp_gro_lookup(struct li
  			continue;
  
  		th2 = tcp_hdr(p);
@@ -876,7 +876,7 @@ SVN-Revision: 35130
  			NAPI_GRO_CB(p)->same_flow = 0;
  			continue;
  		}
-@@ -333,8 +333,8 @@ struct sk_buff *tcp_gro_receive(struct l
+@@ -334,8 +334,8 @@ struct sk_buff *tcp_gro_receive(struct l
  		  ~(TCP_FLAG_CWR | TCP_FLAG_FIN | TCP_FLAG_PSH));
  	flush |= (__force int)(th->ack_seq ^ th2->ack_seq);
  	for (i = sizeof(*th); i < thlen; i += 4)
