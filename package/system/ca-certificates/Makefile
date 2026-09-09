@@ -31,7 +31,7 @@ define Package/ca-certificates
   CATEGORY:=Base system
   TITLE:=System CA certificates
   PKGARCH:=all
-  PROVIDES:=@ca-certs
+  PROVIDES:=ca-certs
 endef
 
 define Package/ca-bundle
@@ -39,7 +39,7 @@ define Package/ca-bundle
   CATEGORY:=Base system
   TITLE:=System CA certificates as a bundle
   PKGARCH:=all
-  PROVIDES:=@ca-certs @ca-certificates-any
+  PROVIDES:=ca-certs ca-certificates-any
 endef
 
 define Build/Install
