@@ -28,6 +28,12 @@ define Package/grc/description
  Generic Colouriser for command output with ash, bash and zsh integration.
 endef
 
+define Package/grc/postinst
+#!/bin/sh
+rm -f "$${IPKG_INSTROOT}/etc/profile.d/grc.sh"
+exit 0
+endef
+
 define Build/Compile
 endef
 
@@ -39,14 +45,21 @@ define Package/grc/install
 
 	$(INSTALL_DIR) $(1)/usr/share/grc
 	$(CP) $(PKG_BUILD_DIR)/colourfiles/conf.* $(1)/usr/share/grc/
+	$(INSTALL_DATA) ./files/conf.nft $(1)/usr/share/grc/conf.nft
 	$(SED) 's#/etc/default/grc#/usr/share/grc/grc.default#g' $(PKG_BUILD_DIR)/grc.sh
-	$(INSTALL_CONF) $(PKG_BUILD_DIR)/grc.conf $(1)/usr/share/grc/grc.conf
-	$(INSTALL_CONF) ./files/grc.default $(1)/usr/share/grc/grc.default
+	$(SED) 's#tty -s#[ -t 1 ]#g; s#which grc#command -v grc#g' $(PKG_BUILD_DIR)/grc.sh
+	grep -qs "alias nft=" $(PKG_BUILD_DIR)/grc.sh || $(SED) "/alias iptables=/a\\    alias nft='grc --colour=on -es -c conf.nft nft'" $(PKG_BUILD_DIR)/grc.sh
+	grep -qs "alias ping6=" $(PKG_BUILD_DIR)/grc.sh || $(SED) "/alias ping=/a\\    alias ping6='colourify ping6'" $(PKG_BUILD_DIR)/grc.sh
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/grc.conf $(1)/usr/share/grc/grc.conf
+	printf '%s\n' '^nft' conf.nft >> $(1)/usr/share/grc/grc.conf
+	$(INSTALL_DATA) ./files/grc.default $(1)/usr/share/grc/grc.default
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/grc.sh $(1)/usr/share/grc/grc.sh
+	$(SED) 's#tty -s#[ -t 1 ]#g' $(PKG_BUILD_DIR)/grc.zsh
+	grep -qs '^  nft' $(PKG_BUILD_DIR)/grc.zsh || $(SED) '/^  iptables/a\  nft' $(PKG_BUILD_DIR)/grc.zsh
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/grc.zsh $(1)/usr/share/grc/grc.zsh
 
 	$(INSTALL_DIR) $(1)/etc/profile.d
-	$(INSTALL_DATA) ./files/grc-profile.sh $(1)/etc/profile.d/grc.sh
+	$(INSTALL_DATA) ./files/grc-profile.sh $(1)/etc/profile.d/92-grc.sh
 endef
 
 $(eval $(call BuildPackage,grc))
